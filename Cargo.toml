@@ -1,0 +1,21 @@
+[package]
+name = "midi_clock"
+version = "0.1.0"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[profile.release]
+opt-level = 'z' # turn on maximum optimizations. We only have 64kB
+lto = true      # Link-time-optimizations for further size reduction
+
+[dependencies]
+cortex-m = "0.7.3"
+cortex-m-rt = "0.6.15"
+embedded-hal = "0.2.5"
+panic-halt = "0.2.0"
+
+[dependencies.stm32f1xx-hal]
+# Bluepill contains a 64kB flash variant which is called "medium density"
+features = ["stm32f103", "rt", "medium"]
+version = "^0.6.1"
