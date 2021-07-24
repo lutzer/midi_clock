@@ -1,3 +1,5 @@
+//main.rs
+
 #![no_std]
 #![no_main]
 
@@ -48,8 +50,8 @@ fn main() -> ! {
     // Now, enjoy the lightshow!
     loop {
         led.set_high().ok();
-        delay.delay_ms(1_000_u16);
+        delay.delay_ms(300 as u32);
         led.set_low().ok();
-        delay.delay_ms(1_000_u16);
+        delay.delay_ms(2000 as u32);
     }
 }
