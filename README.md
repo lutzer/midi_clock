@@ -12,7 +12,7 @@
   * install stlink on mac with `brew install stlink`
   * install *binutils-arm-none-eabi* with `brew tap PX4/homebrew-px4; brew install gcc-arm-none-eabi`
 
-  
+
 ## Connect Board
 
 * disconnect external power supply
@@ -21,3 +21,7 @@
 ## Flash Chip
 
 * run `./flash`
+
+## Debugging
+
+* see debugging output with `screen /dev/tty.<adapter> 115200`, (Ctrl+A, K to close monitor)

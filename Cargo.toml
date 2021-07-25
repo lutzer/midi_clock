@@ -13,6 +13,7 @@ lto = true      # Link-time-optimizations for further size reduction
 cortex-m = "0.7.3"
 cortex-m-rt = "0.6.15"
 embedded-hal = "0.2.5"
+nb = "1.0.0"
 panic-halt = "0.2.0"
 
 [dependencies.stm32f1xx-hal]
