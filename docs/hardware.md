@@ -14,7 +14,7 @@
 |      |      					|
 |      |      					|
 
-### UART Adapter
+### Debugging with UART Adapter
 
-Only connect RX, TX and GND, no need for 3.3V connection
+Only connect TX to A9, RX to A10 and GND, no need for 3.3V connection
 
