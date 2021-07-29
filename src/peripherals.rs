@@ -7,7 +7,7 @@ use stm32f1xx_hal::{
   serial::{Serial, Config},
 };
 
-use crate::pac::{USART1};
+use stm32f1xx_hal::pac::{USART1};
 
 type GpioOutput = gpio::gpioc::PC13<gpio::Output<gpio::PushPull>>;
 

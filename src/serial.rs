@@ -1,7 +1,7 @@
-use stm32f1xx_hal::{
-  prelude::*,
-};
 use core::convert::Infallible;
+use stm32f1xx_hal::{
+  prelude::*, 
+};
 
 use crate::peripherals::{Usart1Serial};
 
