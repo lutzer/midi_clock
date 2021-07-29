@@ -11,7 +11,7 @@ use crate::pac::{USART1};
 
 type GpioOutput = gpio::gpioc::PC13<gpio::Output<gpio::PushPull>>;
 
-type Usart1Serial = Serial<
+pub type Usart1Serial = Serial<
   USART1, (gpio::gpioa::PA9<gpio::Alternate<gpio::PushPull>>, 
   gpio::gpioa::PA10<gpio::Input<gpio::Floating>>)>;
 
