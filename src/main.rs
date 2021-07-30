@@ -46,7 +46,7 @@ fn main() -> ! {
         led.set_high().ok();
         delay.delay_ms(1000 as u32);
         led.set_low().ok();
-        delay.delay_ms(1000 as u32);
+        delay.delay_ms(100 as u32);
         serial.write_str("Hello there?\n").ok();
     }
 }

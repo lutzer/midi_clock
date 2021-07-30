@@ -7,7 +7,7 @@ set -e # stop on error
 echo "Compiling program..."
 cargo build --release
 echo "Copying elif to bin."
-rm $OUTPUT_FILE_BIN
+rm -f $OUTPUT_FILE_BIN
 arm-none-eabi-objcopy -O binary $INPUT_FILE_ELIF $OUTPUT_FILE_BIN
 echo "Writing programm to chip..."
 st-flash write $OUTPUT_FILE_BIN $FLASH_ADDRESS
