@@ -7,9 +7,15 @@ use stm32f1xx_hal::{
   serial::{Serial, Config},
 };
 
+extern crate alloc;
+use alloc::boxed::{Box};
+
 use stm32f1xx_hal::pac::{USART1};
 
-type GpioOutput = gpio::gpioc::PC13<gpio::Output<gpio::PushPull>>;
+use embedded_hal::digital::v2::{OutputPin};
+use core::convert::Infallible;
+
+type GpioOutput = Box<dyn OutputPin<Error = Infallible>>;
 
 pub type Usart1Serial = Serial<
   USART1, (gpio::gpioa::PA9<gpio::Alternate<gpio::PushPull>>, 
@@ -46,8 +52,8 @@ impl Peripherals {
   }
 
   fn init_led(mut gpioc: stm32f1xx_hal::gpio::gpioc::Parts) -> Option<GpioOutput> {
-    let led = gpioc.pc13.into_push_pull_output(&mut gpioc.crh);
-    return Some(led);
+    let led = Box::new(gpioc.pc13.into_push_pull_output(&mut gpioc.crh));
+    return Some(led as GpioOutput);
   }
 
   fn init_usart1(
