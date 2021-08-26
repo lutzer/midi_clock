@@ -4,50 +4,49 @@
 
 use cortex_m_rt::entry;
 
-use stm32f1xx_hal::{
-    prelude::*, 
-};
-
-use alloc_cortex_m::CortexMHeap;
+// use stm32f1xx_hal::{
+//     prelude::*
+// };
 
 use cortex_m::asm;
 use core::alloc::Layout;
 
 mod peripherals;
-use peripherals::{Peripherals};
+use peripherals::*;
 
 mod serial;
 use serial::{SerialWriter};
+
+mod buttons;
+use buttons::*;
 
 // When a panic occurs, stop the microcontroller
 #[allow(unused_imports)]
 use panic_halt; 
 
-// initialize the heap allocator to be able to use dynamic sized types
-#[global_allocator]
-static ALLOCATOR: CortexMHeap = CortexMHeap::empty(); 
-const HEAP_SIZE: usize = 1024; // in bytes
-
 #[entry]
 fn main() -> ! {
-
-    // Initialize heap allocator
-    unsafe { ALLOCATOR.init(cortex_m_rt::heap_start() as usize, HEAP_SIZE) }
 
     // initialize peripherals
     let peripherals = Peripherals::init();
 
     let mut led = peripherals.led.unwrap();
-    let mut delay = peripherals.delay.unwrap();
-    let mut serial = SerialWriter{ serial: peripherals.usart1.unwrap() };
+    let serial = SerialWriter{ serial: peripherals.usart1.unwrap() };
+    let buttons = Buttons::new(peripherals.button1.unwrap());
 
     // main loop
     loop {
-        led.set_high().ok();
-        delay.delay_ms(1000 as u32);
-        led.set_low().ok();
-        delay.delay_ms(100 as u32);
-        serial.write_str("Hello there?\n").ok();
+        let pressed = buttons.read();
+        if pressed {
+            led.set_high().ok();
+        } else {
+            led.set_low().ok();
+        }
+        // led.set_high().ok();
+        // delay.delay_ms(1000 as u32);
+        // led.set_low().ok();
+        // delay.delay_ms(100 as u32);
+        // serial.write_str("Hello there?\n").ok();
     }
 }
 

@@ -1,3 +1,7 @@
+/*
+ * Wrapper for Serial Interfaces
+ */
+
 use core::convert::Infallible;
 use stm32f1xx_hal::{
   prelude::*, 

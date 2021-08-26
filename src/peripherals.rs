@@ -1,5 +1,8 @@
+/*
+ * Initializes all used peripherals on the stm32
+ */
+
 use stm32f1xx_hal::{
-  delay::Delay, 
   pac, 
   prelude::*,
   gpio,
@@ -7,27 +10,26 @@ use stm32f1xx_hal::{
   serial::{Serial, Config},
 };
 
-extern crate alloc;
-use alloc::boxed::{Box};
-
 use stm32f1xx_hal::pac::{USART1};
 
-use embedded_hal::digital::v2::{OutputPin};
-use core::convert::Infallible;
+pub use embedded_hal::digital::v2::{OutputPin, InputPin};
 
-type GpioOutput = Box<dyn OutputPin<Error = Infallible>>;
-
+// types for Initialized peripherals
+pub type Led1Gpio = gpio::gpioc::PC13<gpio::Output<gpio::PushPull>>;
+pub type Button1Gpio = gpio::gpioa::PA0<gpio::Input<gpio::PullUp>>;
 pub type Usart1Serial = Serial<
   USART1, (gpio::gpioa::PA9<gpio::Alternate<gpio::PushPull>>, 
   gpio::gpioa::PA10<gpio::Input<gpio::Floating>>)>;
 
+// holds all peripherals
 pub struct Peripherals {
-  pub led: Option<GpioOutput>,
-  pub delay: Option<stm32f1xx_hal::delay::Delay>,
+  pub led: Option<Led1Gpio>,
+  pub button1: Option<Button1Gpio>,
   pub usart1: Option<Usart1Serial>
 }
 
 impl Peripherals {
+
   pub fn init() -> Peripherals {
 
     let dp = pac::Peripherals::take().unwrap();
@@ -40,31 +42,41 @@ impl Peripherals {
 
     // access PGIOC and PGIOB registers and prepare the alternate function I/O registers
     let mut apb2 = rcc.apb2;
-    let gpioc = dp.GPIOC.split(&mut apb2);
-    let gpioa = dp.GPIOA.split(&mut apb2);
-    let afio = dp.AFIO.constrain(&mut apb2);
+    let mut gpioc = dp.GPIOC.split(&mut apb2);
+    let mut gpioa = dp.GPIOA.split(&mut apb2);
+    let mut afio = dp.AFIO.constrain(&mut apb2);
 
     return Peripherals{
-      led: Peripherals::init_led(gpioc),
-      delay: Some(Delay::new(cp.SYST, clocks)),
-      usart1: Peripherals::init_usart1(dp.USART1, gpioa, afio, &clocks, apb2)
+      led: Peripherals::init_led(gpioc.pc13, &mut gpioc.crh),
+      button1: Peripherals::init_button1(gpioa.pa0, &mut gpioa.crl),
+      usart1: Peripherals::init_usart1(dp.USART1, gpioa.pa9, gpioa.pa10, &mut gpioa.crh, &mut afio, &clocks, apb2)
     }
   }
 
-  fn init_led(mut gpioc: stm32f1xx_hal::gpio::gpioc::Parts) -> Option<GpioOutput> {
-    let led = Box::new(gpioc.pc13.into_push_pull_output(&mut gpioc.crh));
-    return Some(led as GpioOutput);
+  fn init_led(pc13: gpio::gpioc::PC13<gpio::Input<gpio::Floating>>, crh: &mut gpio::gpioc::CRH) -> Option<Led1Gpio> {
+    let led = pc13.into_push_pull_output(crh);
+    return Some(led);
+  }
+
+  fn init_button1(
+    pa0: gpio::gpioa::PA0<gpio::Input<gpio::Floating>>, 
+    crl: &mut gpio::gpioa::CRL
+  ) -> Option<Button1Gpio> {
+    let button = pa0.into_pull_up_input(crl);
+    return Some(button);
   }
 
   fn init_usart1(
     usart1: USART1, 
-    mut gpioa: gpio::gpioa::Parts, 
-    mut afio: afio::Parts, 
+    pa9: gpio::gpioa::PA9<gpio::Input<gpio::Floating>>,
+    pa10: gpio::gpioa::PA10<gpio::Input<gpio::Floating>>,
+    crh: &mut gpio::gpioa::CRH,
+    afio: &mut afio::Parts, 
     clocks: &stm32f1xx_hal::rcc::Clocks, 
     mut apb2: stm32f1xx_hal::rcc::APB2
   ) -> Option<Usart1Serial> {
-    let tx = gpioa.pa9.into_alternate_push_pull(&mut gpioa.crh);
-    let rx = gpioa.pa10;
+    let tx = pa9.into_alternate_push_pull(crh);
+    let rx = pa10;
 
     let serial = Serial::usart1(
       usart1,
