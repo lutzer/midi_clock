@@ -20,9 +20,12 @@ use serial::{SerialWriter};
 mod buttons;
 use buttons::*;
 
+mod timers;
+use timers::*;
+
 // When a panic occurs, stop the microcontroller
 #[allow(unused_imports)]
-use panic_halt; 
+use panic_halt;
 
 #[entry]
 fn main() -> ! {
@@ -31,16 +34,24 @@ fn main() -> ! {
     let peripherals = Peripherals::init();
 
     let mut led = peripherals.led.unwrap();
-    let serial = SerialWriter{ serial: peripherals.usart1.unwrap() };
-    let buttons = Buttons::new(peripherals.button1.unwrap());
+    let mut serial = SerialWriter{ serial: peripherals.usart1.unwrap() };
+    let buttons = Buttons{ button1: peripherals.button1.unwrap() };
+
+    let mut on_timer_listener = || {
+        serial.write_str("tick\n").ok();
+    };
+
+    let mut timers = Timers::new();
+    timers.add_handler(&mut on_timer_listener);
 
     // main loop
     loop {
         let pressed = buttons.read();
         if pressed {
-            led.set_high().ok();
-        } else {
             led.set_low().ok();
+            timers.emit();
+        } else {
+            led.set_high().ok();
         }
         // led.set_high().ok();
         // delay.delay_ms(1000 as u32);
