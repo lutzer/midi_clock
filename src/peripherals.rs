@@ -10,6 +10,9 @@ use stm32f1xx_hal::{
   serial::{Serial, Config},
 };
 
+
+use crate::timers::*;
+
 use stm32f1xx_hal::pac::{USART1};
 
 pub use embedded_hal::digital::v2::{OutputPin, InputPin};
@@ -28,12 +31,12 @@ pub struct Peripherals {
   pub usart1: Option<Usart1Serial>
 }
 
-impl Peripherals {
+impl<'a> Peripherals {
 
   pub fn init() -> Peripherals {
 
     let dp = pac::Peripherals::take().unwrap();
-    let cp = cortex_m::Peripherals::take().unwrap();
+    // let cp = cortex_m::Peripherals::take().unwrap();
 
     // set clock frequency to internal 8mhz oscillator
     let rcc = dp.RCC.constrain();
@@ -41,19 +44,26 @@ impl Peripherals {
     let clocks = rcc.cfgr.sysclk(8.mhz()).freeze(&mut flash.acr);
 
     // access PGIOC and PGIOB registers and prepare the alternate function I/O registers
+    let apb1 = rcc.apb1;
     let mut apb2 = rcc.apb2;
     let mut gpioc = dp.GPIOC.split(&mut apb2);
     let mut gpioa = dp.GPIOA.split(&mut apb2);
     let mut afio = dp.AFIO.constrain(&mut apb2);
 
-    return Peripherals{
+    // init timers
+    Timer2::init(dp.TIM2, &clocks, apb1);
+
+    return Peripherals {
       led: Peripherals::init_led(gpioc.pc13, &mut gpioc.crh),
       button1: Peripherals::init_button1(gpioa.pa0, &mut gpioa.crl),
       usart1: Peripherals::init_usart1(dp.USART1, gpioa.pa9, gpioa.pa10, &mut gpioa.crh, &mut afio, &clocks, apb2)
-    }
+    };
   }
 
-  fn init_led(pc13: gpio::gpioc::PC13<gpio::Input<gpio::Floating>>, crh: &mut gpio::gpioc::CRH) -> Option<Led1Gpio> {
+  fn init_led(
+    pc13: gpio::gpioc::PC13<gpio::Input<gpio::Floating>>, 
+    crh: &mut gpio::gpioc::CRH
+  ) -> Option<Led1Gpio> {
     let led = pc13.into_push_pull_output(crh);
     return Some(led);
   }

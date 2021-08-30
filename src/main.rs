@@ -21,37 +21,52 @@ mod buttons;
 use buttons::*;
 
 mod timers;
-use timers::*;
+use timers::{Timer2};
+
+mod utils;
+use utils::{num_to_string};
 
 // When a panic occurs, stop the microcontroller
 #[allow(unused_imports)]
 use panic_halt;
 
+use core::sync::atomic::{AtomicU16, Ordering};
+
+static COUNTER: AtomicU16 = AtomicU16::new(0);
+
+fn on_tick() {
+    COUNTER.fetch_add(1, Ordering::Relaxed);
+}
+
 #[entry]
 fn main() -> ! {
+
 
     // initialize peripherals
     let peripherals = Peripherals::init();
 
     let mut led = peripherals.led.unwrap();
-    let mut serial = SerialWriter{ serial: peripherals.usart1.unwrap() };
-    let buttons = Buttons{ button1: peripherals.button1.unwrap() };
+    let mut serial = SerialWriter::new(peripherals.usart1.unwrap());
+    let buttons = Buttons::new(peripherals.button1.unwrap());
 
-    let mut on_timer_listener = || {
-        serial.write_str("tick\n").ok();
-    };
+    Timer2::add_handler(0, on_tick);
 
-    let mut timers = Timers::new();
-    timers.add_handler(&mut on_timer_listener);
+    serial.write_str("start").ok();
+
+    let mut pressed_before = false;
 
     // main loop
     loop {
         let pressed = buttons.read();
-        if pressed {
+        if pressed && !pressed_before {
             led.set_low().ok();
-            timers.emit();
+            let count = COUNTER.load(Ordering::Relaxed);
+            let str = num_to_string(count);
+            serial.write_str(str).ok();
+            pressed_before = true;
         } else {
             led.set_high().ok();
+            pressed_before = false;
         }
         // led.set_high().ok();
         // delay.delay_ms(1000 as u32);
