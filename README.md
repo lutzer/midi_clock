@@ -16,7 +16,7 @@
 ## Connect Board
 
 * disconnect external power supply
-* connect programmer *ST-Link V2* to programming pins of blue pill. Connect pins *SWDIO, GND, SWCLK, and 3.3V*
+* connect programmer *ST-Link V2* to programming pins of blue pill. Connect pins *SWDIO, GND, SWCLK, and 3.3V and RST to pin R*
 * check if programmer is avalaible with `st-info --probe`
 * for debugging connect seria adapter, see in [docs/hardware.md](docs/hardware.md)
 

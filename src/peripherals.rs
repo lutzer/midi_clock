@@ -44,14 +44,14 @@ impl<'a> Peripherals {
     let clocks = rcc.cfgr.sysclk(8.mhz()).freeze(&mut flash.acr);
 
     // access PGIOC and PGIOB registers and prepare the alternate function I/O registers
-    let apb1 = rcc.apb1;
+    let mut apb1 = rcc.apb1;
     let mut apb2 = rcc.apb2;
     let mut gpioc = dp.GPIOC.split(&mut apb2);
     let mut gpioa = dp.GPIOA.split(&mut apb2);
     let mut afio = dp.AFIO.constrain(&mut apb2);
 
     // init timers
-    Timer2::init(dp.TIM2, &clocks, apb1);
+    Timer2::init(dp.TIM2, &clocks, &mut apb1);
 
     return Peripherals {
       led: Peripherals::init_led(gpioc.pc13, &mut gpioc.crh),

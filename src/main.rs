@@ -4,9 +4,9 @@
 
 use cortex_m_rt::entry;
 
-// use stm32f1xx_hal::{
-//     prelude::*
-// };
+use stm32f1xx_hal::{
+    pac::{interrupt}
+};
 
 use cortex_m::asm;
 use core::alloc::Layout;
@@ -26,15 +26,20 @@ use timers::{Timer2};
 mod utils;
 use utils::{num_to_string};
 
+#[cfg(feature = "debug")]
+mod debug;
+use debug::*;
+
 // When a panic occurs, stop the microcontroller
 #[allow(unused_imports)]
 use panic_halt;
 
 use core::sync::atomic::{AtomicU16, Ordering};
 
-static COUNTER: AtomicU16 = AtomicU16::new(0);
+static COUNTER: AtomicU16 = AtomicU16::new(13);
 
 fn on_tick() {
+    debug!("on_tick");
     COUNTER.fetch_add(1, Ordering::Relaxed);
 }
 
@@ -46,12 +51,18 @@ fn main() -> ! {
     let peripherals = Peripherals::init();
 
     let mut led = peripherals.led.unwrap();
-    let mut serial = SerialWriter::new(peripherals.usart1.unwrap());
+
+    let serial = SerialWriter::new(peripherals.usart1.unwrap());
+
+    // only use this in debug mode
+    #[cfg(feature = "debug")]
+    debug_init(serial);
+
     let buttons = Buttons::new(peripherals.button1.unwrap());
 
     Timer2::add_handler(0, on_tick);
 
-    serial.write_str("start").ok();
+    debug!("start");
 
     let mut pressed_before = false;
 
@@ -62,9 +73,9 @@ fn main() -> ! {
             led.set_low().ok();
             let count = COUNTER.load(Ordering::Relaxed);
             let str = num_to_string(count);
-            serial.write_str(str).ok();
+            debug!(str);
             pressed_before = true;
-        } else {
+        } else if !pressed {
             led.set_high().ok();
             pressed_before = false;
         }
