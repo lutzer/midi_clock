@@ -3,6 +3,7 @@ use core::cell::{ RefCell };
 
 use crate::SerialWriter;
 
+#[cfg(feature = "debug")]
 pub static G_SERIAL : Mutex<RefCell<Option<SerialWriter>>> = Mutex::new(RefCell::new(None));
 
 #[macro_export]

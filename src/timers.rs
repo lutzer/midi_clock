@@ -8,11 +8,6 @@ use stm32f1xx_hal::{
 use cortex_m::interrupt::{CriticalSection, Mutex};
 use core::cell::{ UnsafeCell, RefCell};
 
-use crate::{COUNTER};
-use crate::*;
-
-use core::sync::atomic::{AtomicU16, Ordering};
-
 type TimerHandler = fn();
 
 const MAX_HANDLERS: usize = 5;
@@ -21,21 +16,14 @@ struct CSTimerHandler( UnsafeCell<[Option<TimerHandler>; MAX_HANDLERS]> );
 
 impl CSTimerHandler {
   fn set(&self, index: usize, handler: TimerHandler, _cs: &CriticalSection ) {
-    unsafe { 
-      let mut handlers = *self.0.get();
-      handlers[index] = Some(handler);
-      debug!("add handler");
-     }
+    unsafe {
+      (*self.0.get())[index] = Some(handler);
+    }
   }
   pub fn execute(&self, _cs: &CriticalSection) {
     unsafe {
-      let handlers = *self.0.get();
       for i in 0..MAX_HANDLERS {
-        debug!("what?");
-        if handlers[i].is_some() {
-          debug!("is some");
-        }
-        handlers[i].map(|f| { f(); debug!("handlers"); } );
+        (*self.0.get())[i].map(|f| { f(); } );
       }
     }
   }
@@ -74,13 +62,6 @@ impl Timer2  {
 
 #[interrupt]
 fn TIM2() {
-  // COUNTER.fetch_add(1, Ordering::Relaxed);
-  //   let tim = G_TIM2.get_or_insert_with(|| {
-  //     cortex_m::interrupt::free(|cs| {
-  //         // Move LED pin here, leaving a None in its place
-  //         G_TIM2.borrow(cs).replace(None).unwrap()
-  //     })
-  // });
   cortex_m::interrupt::free(|cs| {
     TIMER_HANDLERS.execute(cs);
     let mut tim2 = G_TIM2.borrow(cs).borrow_mut();

@@ -4,10 +4,6 @@
 
 use cortex_m_rt::entry;
 
-use stm32f1xx_hal::{
-    pac::{interrupt}
-};
-
 use cortex_m::asm;
 use core::alloc::Layout;
 
@@ -23,10 +19,6 @@ use buttons::*;
 mod timers;
 use timers::{Timer2};
 
-mod utils;
-use utils::{num_to_string};
-
-#[cfg(feature = "debug")]
 mod debug;
 use debug::*;
 
@@ -34,13 +26,8 @@ use debug::*;
 #[allow(unused_imports)]
 use panic_halt;
 
-use core::sync::atomic::{AtomicU16, Ordering};
-
-static COUNTER: AtomicU16 = AtomicU16::new(13);
-
 fn on_tick() {
     debug!("on_tick");
-    COUNTER.fetch_add(1, Ordering::Relaxed);
 }
 
 #[entry]
@@ -71,9 +58,6 @@ fn main() -> ! {
         let pressed = buttons.read();
         if pressed && !pressed_before {
             led.set_low().ok();
-            let count = COUNTER.load(Ordering::Relaxed);
-            let str = num_to_string(count);
-            debug!(str);
             pressed_before = true;
         } else if !pressed {
             led.set_high().ok();
