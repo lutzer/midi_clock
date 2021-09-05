@@ -37,10 +37,11 @@ static G_TIM2: Mutex<RefCell<Option<CountDownTimer<TIM2>>>> = Mutex::new(RefCell
 
 pub struct Timer2;
 
+// set timer2 to 20hz = 50ms
 impl Timer2  {
   pub fn init(tim2: stm32f1xx_hal::stm32::TIM2, clocks: &stm32f1xx_hal::rcc::Clocks, apb1: &mut stm32f1xx_hal::rcc::APB1) {
     // Set up a timer expiring after 1s
-    let mut timer = Timer::tim2(tim2, &clocks, apb1).start_count_down(1.hz());
+    let mut timer = Timer::tim2(tim2, &clocks, apb1).start_count_down(20.hz());
 
     // Generate an interrupt when the timer expires
     timer.listen(Event::Update);

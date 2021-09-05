@@ -27,3 +27,7 @@
 ## Debugging
 
 * see debugging output with `screen /dev/tty.<adapter> 115200`, (Ctrl+A, K to close monitor)
+
+## Links
+
+* https://www.midi.org/specifications-old/item/table-1-summary-of-midi-message

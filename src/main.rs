@@ -22,18 +22,23 @@ use timers::{Timer2};
 mod debug;
 use debug::*;
 
+mod utils;
+
 // When a panic occurs, stop the microcontroller
 #[allow(unused_imports)]
 use panic_halt;
 
-fn on_tick() {
-    debug!("on_tick");
+
+fn on_button_press(_: u8, pressed: bool) {
+    if pressed {
+        debug!("button pressed");
+    } else {
+        debug!("button released");
+    }
 }
 
 #[entry]
 fn main() -> ! {
-
-
     // initialize peripherals
     let peripherals = Peripherals::init();
 
@@ -45,29 +50,15 @@ fn main() -> ! {
     #[cfg(feature = "debug")]
     debug_init(serial);
 
-    let buttons = Buttons::new(peripherals.button1.unwrap());
+    let buttons = Buttons::new(peripherals.button1.unwrap(), on_button_press);
 
-    Timer2::add_handler(0, on_tick);
+    Timer2::add_handler(0, Buttons::on_tick);
 
     debug!("start");
 
-    let mut pressed_before = false;
-
     // main loop
     loop {
-        let pressed = buttons.read();
-        if pressed && !pressed_before {
-            led.set_low().ok();
-            pressed_before = true;
-        } else if !pressed {
-            led.set_high().ok();
-            pressed_before = false;
-        }
-        // led.set_high().ok();
-        // delay.delay_ms(1000 as u32);
-        // led.set_low().ok();
-        // delay.delay_ms(100 as u32);
-        // serial.write_str("Hello there?\n").ok();
+        buttons.update();
     }
 }
 
