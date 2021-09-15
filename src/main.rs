@@ -29,12 +29,10 @@ mod utils;
 use panic_halt;
 
 
-fn on_button_press(_: u8, pressed: bool) {
-    if pressed {
-        debug!("button pressed");
-    } else {
-        debug!("button released");
-    }
+fn on_button_press(changes: u8, state: u8) {
+    debug!("button changed");
+    debug!(num_to_string(changes as u16));
+    debug!(num_to_string(state as u16));
 }
 
 #[entry]
@@ -42,16 +40,13 @@ fn main() -> ! {
     // initialize peripherals
     let peripherals = Peripherals::init();
 
-    let mut led = peripherals.led.unwrap();
+    // let mut led = peripherals.led.unwrap();
 
     let serial = SerialWriter::new(peripherals.usart1.unwrap());
+    debug_init!(serial);
 
-    // only use this in debug mode
-    #[cfg(feature = "debug")]
-    debug_init(serial);
-
-    let buttons = Buttons::new(peripherals.button1.unwrap(), on_button_press);
-
+    let buttons = Buttons::new(peripherals.button1.unwrap(), peripherals.button2.unwrap(), 
+        peripherals.button3.unwrap(), on_button_press);
     Timer2::add_handler(0, Buttons::on_tick);
 
     debug!("start");

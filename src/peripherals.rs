@@ -19,7 +19,11 @@ pub use embedded_hal::digital::v2::{OutputPin, InputPin};
 
 // types for Initialized peripherals
 pub type Led1Gpio = gpio::gpioc::PC13<gpio::Output<gpio::PushPull>>;
+
 pub type Button1Gpio = gpio::gpioa::PA0<gpio::Input<gpio::PullUp>>;
+pub type Button2Gpio = gpio::gpioa::PA1<gpio::Input<gpio::PullUp>>;
+pub type Button3Gpio = gpio::gpioa::PA4<gpio::Input<gpio::PullUp>>;
+
 pub type Usart1Serial = Serial<
   USART1, (gpio::gpioa::PA9<gpio::Alternate<gpio::PushPull>>, 
   gpio::gpioa::PA10<gpio::Input<gpio::Floating>>)>;
@@ -28,6 +32,8 @@ pub type Usart1Serial = Serial<
 pub struct Peripherals {
   pub led: Option<Led1Gpio>,
   pub button1: Option<Button1Gpio>,
+  pub button2: Option<Button2Gpio>,
+  pub button3: Option<Button3Gpio>,
   pub usart1: Option<Usart1Serial>
 }
 
@@ -56,6 +62,8 @@ impl<'a> Peripherals {
     return Peripherals {
       led: Peripherals::init_led(gpioc.pc13, &mut gpioc.crh),
       button1: Peripherals::init_button1(gpioa.pa0, &mut gpioa.crl),
+      button2: Peripherals::init_button2(gpioa.pa1, &mut gpioa.crl),
+      button3: Peripherals::init_button3(gpioa.pa4, &mut gpioa.crl),
       usart1: Peripherals::init_usart1(dp.USART1, gpioa.pa9, gpioa.pa10, &mut gpioa.crh, &mut afio, &clocks, apb2)
     };
   }
@@ -73,6 +81,22 @@ impl<'a> Peripherals {
     crl: &mut gpio::gpioa::CRL
   ) -> Option<Button1Gpio> {
     let button = pa0.into_pull_up_input(crl);
+    return Some(button);
+  }
+
+  fn init_button2(
+    pa1: gpio::gpioa::PA1<gpio::Input<gpio::Floating>>, 
+    crl: &mut gpio::gpioa::CRL
+  ) -> Option<Button2Gpio> {
+    let button = pa1.into_pull_up_input(crl);
+    return Some(button);
+  }
+
+  fn init_button3(
+    pa4: gpio::gpioa::PA4<gpio::Input<gpio::Floating>>, 
+    crl: &mut gpio::gpioa::CRL
+  ) -> Option<Button3Gpio> {
+    let button = pa4.into_pull_up_input(crl);
     return Some(button);
   }
 
