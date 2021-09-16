@@ -9,52 +9,48 @@ use stm32f1xx_hal::{
 
 use embedded_hal::digital::v2::InputPin;
 
-use crate::debug::*;
-use crate::debug;
+use core::sync::atomic::{AtomicI32, Ordering};
 
-use crate::utils::*;
-
-use core::mem::MaybeUninit;
-
-type EncoderChangeHandler = fn(u8);
+use cortex_m::interrupt::{Mutex};
+use core::cell::{RefCell};
 
 #[derive(Copy,Clone)]
 enum EncoderState {
-  CW_START = 0x01,
-  CW_STEP1 = 0x02,
-  CW_STEP2 = 0x03,
-  CW_FINAL = 0x10,
+  CwStart = 0x01,
+  CwFinal = 0x10,
 
-  CCW_START = 0x04,
-  CCW_STEP1 = 0x05,
-  CCW_STEP3 = 0x06,
-  CCW_FINAL = 0x20,
+  CcwStart = 0x02,
+  CcwFinal = 0x20,
 
-  UNDEFINED = 0x40,
+  Undefined = 0x40,
 }
 
-const TRANSITION_TABLE: [[EncoderState; 4]; 7] = [
-  [ EncoderState::UNDEFINED, EncoderState::CCW_START, EncoderState::CW_START, EncoderState::UNDEFINED ],  // init state -> 1,2
-
-  [ EncoderState::CW_STEP1, EncoderState::UNDEFINED, EncoderState::UNDEFINED, EncoderState::UNDEFINED ], // cw start -> 0
-  [ EncoderState::UNDEFINED, EncoderState::CW_STEP2, EncoderState::CW_START, EncoderState::UNDEFINED ], // cw step1 -> 1, <- 2
-  [ EncoderState::CW_STEP1, EncoderState::UNDEFINED, EncoderState::UNDEFINED, EncoderState::CW_FINAL ], // cw step2 -> 3, <- 0
-
-  [ EncoderState::CCW_STEP1, EncoderState::UNDEFINED, EncoderState::UNDEFINED, EncoderState::UNDEFINED ], // ccw start -> 0
-  [ EncoderState::UNDEFINED, EncoderState::CCW_START, EncoderState::CCW_STEP3, EncoderState::UNDEFINED ], // ccw step1 -> 2, <- 0
-  [ EncoderState::UNDEFINED, EncoderState::CCW_STEP1, EncoderState::UNDEFINED , EncoderState::CCW_FINAL ] // ccw step2 -> 3, <- 2
+const TRANSITION_LOOKUPTABLE: [[EncoderState; 4]; 3] = [
+  [ EncoderState::Undefined, EncoderState::Undefined, EncoderState::CwStart, EncoderState::CcwStart ],  // init state -> 2,3
+  [ EncoderState::Undefined, EncoderState::CwFinal, EncoderState::Undefined, EncoderState::Undefined ], // cw start -> 1
+  [ EncoderState::CcwFinal, EncoderState::Undefined, EncoderState::Undefined, EncoderState::Undefined ], // cw start -> 0
 ];
 
+fn get_transition(state: u8, transition: u8) -> EncoderState {
+  return TRANSITION_LOOKUPTABLE[state as usize][transition as usize];
+}
+
+static ENCODER_POSITION: AtomicI32 = AtomicI32::new(0);
+
+type EncoderChangeHandler = fn(i8);
+
 pub struct Encoder {
-  position: i32,
   change_handler: EncoderChangeHandler
 }
 
-static mut ENCODER_PIN1: MaybeUninit<stm32f1xx_hal::gpio::gpioa::PA0<gpio::Input<gpio::PullUp>>> =
-  MaybeUninit::uninit();
+type EncoderPin1Type = stm32f1xx_hal::gpio::gpioa::PA0<gpio::Input<gpio::PullUp>>;
+type EncoderPin2Type = stm32f1xx_hal::gpio::gpiob::PB0<gpio::Input<gpio::PullUp>>;
 
-static mut ENCODER_PIN2: MaybeUninit<stm32f1xx_hal::gpio::gpiob::PB0<gpio::Input<gpio::PullUp>>> =
-  MaybeUninit::uninit();
+static ENCODER_PIN1: Mutex<RefCell<Option<EncoderPin1Type>>> =
+  Mutex::new(RefCell::new(None));
+
+static ENCODER_PIN2: Mutex<RefCell<Option<EncoderPin2Type>>> =
+  Mutex::new(RefCell::new(None));
 
 impl Encoder {
   pub fn init(
@@ -66,51 +62,62 @@ impl Encoder {
     afio: &mut afio::Parts,
   ) {
     // enable interrupt for pin pa0
-    let enc_pin1 = unsafe { &mut *ENCODER_PIN1.as_mut_ptr() };
-    *enc_pin1 = pa0.into_pull_up_input(crla);
+    let mut enc_pin1 = pa0.into_pull_up_input(crla);
     enc_pin1.make_interrupt_source(afio);
     enc_pin1.trigger_on_edge(exti, Edge::RISING_FALLING);
     enc_pin1.enable_interrupt(exti);
+    cortex_m::interrupt::free(|cs| ENCODER_PIN1.borrow(cs).replace(Some(enc_pin1)));
 
     // enable interrupt for pin pb0
-    let enc_pin2 = unsafe { &mut *ENCODER_PIN2.as_mut_ptr() };
-    *enc_pin2 = pb0.into_pull_up_input(crlb);
+    let mut enc_pin2 = pb0.into_pull_up_input(crlb);
     enc_pin2.make_interrupt_source(afio);
     enc_pin2.trigger_on_edge(exti, Edge::RISING_FALLING);
     enc_pin2.enable_interrupt(exti);
+    cortex_m::interrupt::free(|cs| ENCODER_PIN2.borrow(cs).replace(Some(enc_pin2)));
 
     unsafe {
       pac::NVIC::unmask(pac::Interrupt::EXTI0);
     }
-   
   }
 
   pub fn new(handler: EncoderChangeHandler) -> Encoder {
-    return Encoder { position: 0 , change_handler: handler };
+    return Encoder { change_handler: handler };
   }
 
   pub fn update(&self) {
-    // static mut LAST_POSITION : u32 = 0;
+    static mut LAST_POSITION : i32 = 0;
+    let position = ENCODER_POSITION.load(Ordering::Relaxed);
+    
+    unsafe {
+      let delta = position - LAST_POSITION;
+      if delta != 0 {
+        (self.change_handler)(delta as i8);
+        LAST_POSITION = position;
+      }
+    }
   }
 }
 
 #[interrupt]
 fn EXTI0() {
-  static mut STATE: EncoderState = EncoderState::UNDEFINED;
+  static mut STATE: EncoderState = EncoderState::Undefined;
 
-  let enc_pin2 = unsafe { &mut *ENCODER_PIN2.as_mut_ptr() };
-  let enc_pin1 = unsafe { &mut *ENCODER_PIN1.as_mut_ptr() };
+  cortex_m::interrupt::free(|cs|  {
+    let mut enc_pin1 = ENCODER_PIN1.borrow(cs).borrow_mut();
+    let mut enc_pin2 = ENCODER_PIN2.borrow(cs).borrow_mut();
 
-  let reading = enc_pin1.is_low().unwrap() as u8 | (enc_pin2.is_low().unwrap() as u8) << 1;
-  debug!("interrupt");
-  debug!(num_to_string(reading as u16));
+    let reading = enc_pin1.as_ref().unwrap().is_low().unwrap() as u8 |
+      (enc_pin2.as_ref().unwrap().is_low().unwrap() as u8) << 1;
 
-  // unsafe { STATE = TRANSITION_TABLE[0][0]; }
+    *STATE = get_transition((*STATE as u8) & 0x0F,reading);
 
-  if enc_pin1.check_interrupt() {
-    enc_pin1.clear_interrupt_pending_bit();
-  }
-  if enc_pin2.check_interrupt() {
-    enc_pin2.clear_interrupt_pending_bit();
-  }
+    if *STATE as u8 == EncoderState::CwFinal as u8 {
+      ENCODER_POSITION.fetch_add(1, Ordering::Relaxed);
+    } else if *STATE as u8 == EncoderState::CcwFinal as u8 {
+      ENCODER_POSITION.fetch_add(-1, Ordering::Relaxed);
+    }
+
+    enc_pin1.as_mut().unwrap().clear_interrupt_pending_bit();
+    enc_pin2.as_mut().unwrap().clear_interrupt_pending_bit();
+  });
 }
