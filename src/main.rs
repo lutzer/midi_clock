@@ -23,7 +23,6 @@ mod debug;
 use debug::*;
 
 mod utils;
-use utils::*;
 
 mod encoder;
 use encoder::*;
@@ -35,25 +34,19 @@ use panic_halt;
 
 fn on_button_press(changes: u8, state: u8) {
   debug!("button changed");
-  debug!(num_to_string(changes as u16));
-  debug!(num_to_string(state as u16));
+  debug!(changes as u16);
+  debug!(state as u16);
 }
 
-fn on_encoder_change(rotation: i8) {
-  if rotation > 0 {
-    debug!("encoder changed +");
-  } else {
-    debug!("encoder changed -");
-  }
-  // debug!(num_to_string(rotation as u16));
+fn on_encoder_change(rotation: i32) {
+  debug!("encoder changed");
+  debug!(rotation as i16);
 }
 
 #[entry]
 fn main() -> ! {
   // initialize peripherals
   let peripherals = Peripherals::init();
-  
-  // let mut led = peripherals.led.unwrap();
   
   let serial = SerialWriter::new(peripherals.usart1.unwrap());
   debug_init!(serial);

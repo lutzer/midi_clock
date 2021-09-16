@@ -25,6 +25,7 @@ enum EncoderState {
   Undefined = 0x40,
 }
 
+// lookup table for transitioning the encoder state from current state and current reading
 const TRANSITION_LOOKUPTABLE: [[EncoderState; 4]; 3] = [
   [ EncoderState::Undefined, EncoderState::Undefined, EncoderState::CwStart, EncoderState::CcwStart ],  // init state -> 2,3
   [ EncoderState::Undefined, EncoderState::CwFinal, EncoderState::Undefined, EncoderState::Undefined ], // cw start -> 1
@@ -35,9 +36,11 @@ fn get_transition(state: u8, transition: u8) -> EncoderState {
   return TRANSITION_LOOKUPTABLE[state as usize][transition as usize];
 }
 
+const MAX_I32_HALF: i32 = i32::MAX / 2;
+
 static ENCODER_POSITION: AtomicI32 = AtomicI32::new(0);
 
-type EncoderChangeHandler = fn(i8);
+type EncoderChangeHandler = fn(i32);
 
 pub struct Encoder {
   change_handler: EncoderChangeHandler
@@ -86,12 +89,20 @@ impl Encoder {
 
   pub fn update(&self) {
     static mut LAST_POSITION : i32 = 0;
+
     let position = ENCODER_POSITION.load(Ordering::Relaxed);
     
+    // calculate the difference between last read position and current position
     unsafe {
       let delta = position - LAST_POSITION;
-      if delta != 0 {
-        (self.change_handler)(delta as i8);
+
+      // reset position when position is out of bounds
+      if i32::abs(delta) > MAX_I32_HALF {
+        LAST_POSITION = 0;
+        ENCODER_POSITION.store(0, Ordering::Relaxed);
+      // else call handler function
+      } else if delta != 0 {
+        (self.change_handler)(delta);
         LAST_POSITION = position;
       }
     }
@@ -109,8 +120,10 @@ fn EXTI0() {
     let reading = enc_pin1.as_ref().unwrap().is_low().unwrap() as u8 |
       (enc_pin2.as_ref().unwrap().is_low().unwrap() as u8) << 1;
 
-    *STATE = get_transition((*STATE as u8) & 0x0F,reading);
+    // set new state depending on reading and old state
+    *STATE = get_transition((*STATE as u8) & 0x0F, reading);
 
+    // adjust position when reached final turn state
     if *STATE as u8 == EncoderState::CwFinal as u8 {
       ENCODER_POSITION.fetch_add(1, Ordering::Relaxed);
     } else if *STATE as u8 == EncoderState::CcwFinal as u8 {

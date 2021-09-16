@@ -12,7 +12,7 @@ pub struct Buttons {
   button2: Button2Gpio,
   button3: Button3Gpio,
   button4: Button4Gpio,
-  button_handler: Option<ButtonHandler>
+  button_handler: ButtonHandler
 }
 
 // reads and debounces buttons.
@@ -29,7 +29,7 @@ impl Buttons {
       button2: button2,
       button3: button3,
       button4: button4,
-      button_handler: Some(handler)
+      button_handler: handler
     }
   }
 
@@ -61,7 +61,7 @@ impl Buttons {
       unsafe { BUTTON_STATES = button_readings; }
         // check if both bits are 1
       if (changes & low & high) > 0 {
-        self.button_handler.map(|f| f(changes as u8, button_readings as u8));
+        (self.button_handler)(changes as u8, button_readings as u8);
       }
     }
 
