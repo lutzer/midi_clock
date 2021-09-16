@@ -23,6 +23,10 @@ mod debug;
 use debug::*;
 
 mod utils;
+use utils::*;
+
+mod encoder;
+use encoder::*;
 
 // When a panic occurs, stop the microcontroller
 #[allow(unused_imports)]
@@ -33,6 +37,11 @@ fn on_button_press(changes: u8, state: u8) {
     debug!("button changed");
     debug!(num_to_string(changes as u16));
     debug!(num_to_string(state as u16));
+}
+
+fn on_encoder_change(rotation: u8) {
+    debug!("encoder changed");
+    debug!(num_to_string(rotation as u16));
 }
 
 #[entry]
@@ -46,14 +55,17 @@ fn main() -> ! {
     debug_init!(serial);
 
     let buttons = Buttons::new(peripherals.button1.unwrap(), peripherals.button2.unwrap(), 
-        peripherals.button3.unwrap(), on_button_press);
+        peripherals.button3.unwrap(), peripherals.button4.unwrap(), on_button_press);
     Timer2::add_handler(0, Buttons::on_tick);
+
+    let encoder = Encoder::new(on_encoder_change);
 
     debug!("start");
 
     // main loop
     loop {
         buttons.update();
+        encoder.update();
     }
 }
 

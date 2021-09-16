@@ -11,20 +11,24 @@ pub struct Buttons {
   button1: Button1Gpio,
   button2: Button2Gpio,
   button3: Button3Gpio,
+  button4: Button4Gpio,
   button_handler: Option<ButtonHandler>
 }
 
+// reads and debounces buttons.
 impl Buttons {
   pub fn new(
     button1: Button1Gpio, 
     button2: Button2Gpio, 
     button3: Button3Gpio, 
+    button4: Button4Gpio,
     handler: ButtonHandler
   ) -> Buttons {
     return Buttons {
       button1: button1,
       button2: button2,
       button3: button3,
+      button4: button4,
       button_handler: Some(handler)
     }
   }
@@ -36,7 +40,8 @@ impl Buttons {
     let button_readings : u8 = 
       self.button1.is_low().unwrap() as u8
       | (self.button2.is_low().unwrap() as u8) << 1
-      | (self.button3.is_low().unwrap() as u8) << 2;
+      | (self.button3.is_low().unwrap() as u8) << 2
+      | (self.button4.is_low().unwrap() as u8) << 3;
 
     // button state was changed
     let changes = unsafe { (BUTTON_STATES ^ button_readings) as u16 };

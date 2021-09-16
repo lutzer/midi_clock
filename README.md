@@ -31,3 +31,4 @@
 ## Links
 
 * https://www.midi.org/specifications-old/item/table-1-summary-of-midi-message
+* https://www.st.com//content/ccc/resource/technical/document/reference_manual/59/b9/ba/7f/11/af/43/d5/CD00171190.pdf/files/CD00171190.pdf/jcr:content/translations/en.CD00171190.pdf

@@ -10,9 +10,12 @@
 | ---- | -------------- |
 | A9   | Debug TX1      |
 | A10  | Debug RX1      |
-| A0   | Button1     		|
-| A1   | Button2     		|
-| A4   | Button3     		|
+| PB12 | Button1     		|
+| PB13 | Button2     		|
+| PA7  | Button3     		|
+| PA6  | Button4 (Enc)  |
+| PA0  | Enc1           |
+| PB0  | Enc2           |
 
 ### Debugging with UART Adapter
 

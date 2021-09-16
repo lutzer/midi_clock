@@ -1,6 +1,5 @@
 use cortex_m::interrupt::{ Mutex };
 use core::cell::{ RefCell };
-use numtoa::NumToA;
 
 use crate::SerialWriter;
 
@@ -38,12 +37,4 @@ pub fn debug_print(s: &str) {
 #[cfg(feature = "debug")]
 pub fn debug_init(serial: SerialWriter) {
   cortex_m::interrupt::free(|cs| G_SERIAL.borrow(cs).replace(Some(serial)));
-}
-
-pub fn num_to_string<'a>(number: u16) -> &'a str {
-  static mut STRING_BUFFER : [u8; 4] = [0; 4];
-  unsafe { 
-    STRING_BUFFER = [0; 4];
-    return number.numtoa_str(10, &mut STRING_BUFFER); 
-  }
 }
