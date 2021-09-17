@@ -45,6 +45,8 @@ fn on_button_press(changes: u8, state: u8) {
   debug!("button changed");
   debug!(changes as u16);
   debug!(state as u16);
+  let statemachine = unsafe { &mut *STATEMACHINE.as_mut_ptr() };
+  statemachine.button1_pressed();
 }
 
 fn on_encoder_change(rotation: i16) {
@@ -53,11 +55,18 @@ fn on_encoder_change(rotation: i16) {
   statemachine.encoder_turn(rotation);
 }
 
+fn on_state_change(state: &State, clock: &mut Clock) {
+  clock.set_running(state.running == RunState::RUNNING);
+  clock.set_bpm(state.bpm);
+}
+
 #[entry]
 fn main() -> ! {
   // initialize statemachine
   let statemachine = unsafe { &mut *STATEMACHINE.as_mut_ptr() };
   *statemachine = Statemachine::new();
+
+  let initial_state = statemachine.get_state();
 
   // initialize peripherals
   let peripherals = Peripherals::init();
@@ -66,27 +75,26 @@ fn main() -> ! {
   debug_init!(serial);
   
   let buttons = Buttons::new(peripherals.button1.unwrap(), peripherals.button2.unwrap(), 
-    peripherals.button3.unwrap(), peripherals.button4.unwrap(), on_button_press);
+    peripherals.button3.unwrap(), peripherals.button4.unwrap());
   Timer2::add_handler(0, Buttons::on_tick);
 
-  let mut clock = Clock::new(statemachine.get_state().bpm);
+
+  let mut clock = Clock::new(initial_state.bpm, initial_state.running == RunState::RUNNING);
   Timer3::add_handler(0, Clock::on_timer_tick);
   
-  let encoder = Encoder::new(on_encoder_change);
+  let encoder = Encoder::new();
   
   // main loop
   loop {
-    buttons.update();
-    encoder.update();
-    
-    let state = statemachine.update();
-    
-    // statechange handler
-    state.map(|s| {
-      debug!("state changed");
-      clock.set_bpm(s.bpm)
+    buttons.on_change().map(|(changes, reading)| {
+      on_button_press(changes, reading);
     });
-
+    encoder.on_change().map(|rotation| {
+      on_encoder_change(rotation);
+    });
+    statemachine.on_change().map(|s| {
+      on_state_change(&s, &mut clock);
+    });
   }
 }
 

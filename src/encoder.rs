@@ -40,11 +40,7 @@ const MAX_I32_HALF: i32 = i32::MAX / 2;
 
 static ENCODER_POSITION: AtomicI32 = AtomicI32::new(0);
 
-type EncoderChangeHandler = fn(i16);
-
-pub struct Encoder {
-  change_handler: EncoderChangeHandler
-}
+pub struct Encoder {}
 
 type EncoderPin1Type = stm32f1xx_hal::gpio::gpioa::PA0<gpio::Input<gpio::PullUp>>;
 type EncoderPin2Type = stm32f1xx_hal::gpio::gpiob::PB0<gpio::Input<gpio::PullUp>>;
@@ -56,6 +52,7 @@ static ENCODER_PIN2: Mutex<RefCell<Option<EncoderPin2Type>>> =
   Mutex::new(RefCell::new(None));
 
 impl Encoder {
+
   pub fn init(
     exti: &stm32f1xx_hal::pac::EXTI, 
     pa0: gpio::gpioa::PA0<gpio::Input<gpio::Floating>>,
@@ -83,11 +80,12 @@ impl Encoder {
     }
   }
 
-  pub fn new(handler: EncoderChangeHandler) -> Encoder {
-    return Encoder { change_handler: handler };
+
+  pub fn new() -> Encoder {
+    return Encoder {};
   }
 
-  pub fn update(&self) {
+  pub fn on_change(&self) -> Option<i16> {
     static mut LAST_POSITION : i32 = 0;
 
     let position = ENCODER_POSITION.load(Ordering::Relaxed);
@@ -102,10 +100,11 @@ impl Encoder {
         ENCODER_POSITION.store(0, Ordering::Relaxed);
       // else call handler function
       } else if delta != 0 {
-        (self.change_handler)(delta as i16);
         LAST_POSITION = position;
+        return Some(delta as i16);
       }
     }
+    return None;
   }
 }
 

@@ -1,19 +1,20 @@
 use crate::debug;
 use crate::debug::*;
 
-use core::sync::atomic::{AtomicU16, Ordering};
+use core::sync::atomic::{AtomicU16, AtomicBool, Ordering};
 
 pub struct Clock {
-  bpm: u16,
-  running: bool
+  bpm: u16
 }
 
 static FREQ_OVERFLOWS: AtomicU16 = AtomicU16::new(0);
+static RUNNING: AtomicBool = AtomicBool::new(true);
 
 impl Clock {
-  pub fn new(bpm: u16) -> Clock {
-    let mut clock = Clock{ bpm: 0, running: false };
+  pub fn new(bpm: u16, running: bool) -> Clock {
+    let mut clock = Clock{ bpm: 0 };
     clock.set_bpm(bpm);
+    clock.set_running(running);
     return clock;
   }
 
@@ -25,27 +26,22 @@ impl Clock {
   }
 
   pub fn set_running(&mut self, running: bool) {
-    self.running = running;
-    if !running {
-      FREQ_OVERFLOWS.store(0, Ordering::Relaxed);
-    } else {
-      FREQ_OVERFLOWS.store(60000/self.bpm, Ordering::Relaxed);
-    }
+    RUNNING.store(running, Ordering::Relaxed);
   }
 
   pub fn is_running(&self) -> bool {
-    return self.running;
+    return RUNNING.load(Ordering::Relaxed)
   }
 
   pub fn on_timer_tick() {
     static mut OVERFLOWS: u16 = 0;
-    
-    let freq_overflows = FREQ_OVERFLOWS.load(Ordering::Relaxed);
 
-    // clock is paused
-    if freq_overflows == 0 {
+    // clock is not running
+    if !RUNNING.load(Ordering::Relaxed) {
       return;
     }
+
+    let freq_overflows = FREQ_OVERFLOWS.load(Ordering::Relaxed);
 
     // clock is running
     unsafe { 

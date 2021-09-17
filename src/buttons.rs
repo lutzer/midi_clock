@@ -5,14 +5,11 @@ use core::sync::atomic::{AtomicU16, Ordering};
 // 2 bits per button. can count to 4, can handle 8 buttons
 static BUTTON_DEBOUNCE_COUNTERS: AtomicU16 = AtomicU16::new(0);
 
-type ButtonHandler = fn(u8, u8);
-
 pub struct Buttons {
   button1: Button1Gpio,
   button2: Button2Gpio,
   button3: Button3Gpio,
-  button4: Button4Gpio,
-  button_handler: ButtonHandler
+  button4: Button4Gpio
 }
 
 // reads and debounces buttons.
@@ -21,19 +18,17 @@ impl Buttons {
     button1: Button1Gpio, 
     button2: Button2Gpio, 
     button3: Button3Gpio, 
-    button4: Button4Gpio,
-    handler: ButtonHandler
+    button4: Button4Gpio
   ) -> Buttons {
     return Buttons {
       button1: button1,
       button2: button2,
       button3: button3,
-      button4: button4,
-      button_handler: handler
+      button4: button4
     }
   }
 
-  pub fn update(&self) {
+  pub fn on_change(&self) -> Option<(u8,u8)>  {
     static mut BUTTON_STATES: u8 = 0;
 
     // read input pins
@@ -61,10 +56,10 @@ impl Buttons {
       unsafe { BUTTON_STATES = button_readings; }
         // check if both bits are 1
       if (changes & low & high) > 0 {
-        (self.button_handler)(changes as u8, button_readings as u8);
+        return Some((changes as u8, button_readings as u8));
       }
     }
-
+    return None;
   }
 
   pub fn on_tick() {
