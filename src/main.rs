@@ -4,11 +4,6 @@
 
 use cortex_m_rt::entry;
 
-use cortex_m::asm;
-use core::alloc::Layout;
-
-use core::mem::MaybeUninit;
-
 mod peripherals;
 use peripherals::*;
 
@@ -39,19 +34,16 @@ use statemachine::*;
 #[allow(unused_imports)]
 use panic_halt;
 
-static mut STATEMACHINE: MaybeUninit<Statemachine> = MaybeUninit::uninit();
-
-fn on_button_press(changes: u8, state: u8) {
+fn on_button_press(statemachine: &mut Statemachine, changes: u8, state: u8) {
   debug!("button changed");
   debug!(changes as u16);
   debug!(state as u16);
-  let statemachine = unsafe { &mut *STATEMACHINE.as_mut_ptr() };
+  // let statemachine = unsafe { &mut *STATEMACHINE.as_mut_ptr() };
   statemachine.button1_pressed();
 }
 
-fn on_encoder_change(rotation: i16) {
+fn on_encoder_change(statemachine: &mut Statemachine, rotation: i16) {
   debug!("encoder turn");
-  let statemachine = unsafe { &mut *STATEMACHINE.as_mut_ptr() };
   statemachine.encoder_turn(rotation);
 }
 
@@ -63,9 +55,7 @@ fn on_state_change(state: &State, clock: &mut Clock) {
 #[entry]
 fn main() -> ! {
   // initialize statemachine
-  let statemachine = unsafe { &mut *STATEMACHINE.as_mut_ptr() };
-  *statemachine = Statemachine::new();
-
+  let mut statemachine = Statemachine::new();
   let initial_state = statemachine.get_state();
 
   // initialize peripherals
@@ -78,7 +68,6 @@ fn main() -> ! {
     peripherals.button3.unwrap(), peripherals.button4.unwrap());
   Timer2::add_handler(0, Buttons::on_tick);
 
-
   let mut clock = Clock::new(initial_state.bpm, initial_state.running == RunState::RUNNING);
   Timer3::add_handler(0, Clock::on_timer_tick);
   
@@ -87,19 +76,13 @@ fn main() -> ! {
   // main loop
   loop {
     buttons.on_change().map(|(changes, reading)| {
-      on_button_press(changes, reading);
+      on_button_press(&mut statemachine, changes, reading);
     });
     encoder.on_change().map(|rotation| {
-      on_encoder_change(rotation);
+      on_encoder_change(&mut statemachine, rotation);
     });
     statemachine.on_change().map(|s| {
       on_state_change(&s, &mut clock);
     });
   }
-}
-
-#[alloc_error_handler]
-fn alloc_error(_layout: Layout) -> ! {
-  asm::bkpt();
-  loop {}
 }
