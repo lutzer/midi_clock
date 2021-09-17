@@ -62,6 +62,7 @@ impl<'a> Peripherals {
 
     // init timers
     Timer2::init(dp.TIM2, &clocks, &mut apb1);
+    Timer3::init(dp.TIM3, &clocks, &mut apb1);
 
     // init encoder interrupts
     Encoder::init(&dp.EXTI, gpioa.pa0, &mut gpioa.crl, gpiob.pb0, &mut gpiob.crl, &mut afio );

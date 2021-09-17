@@ -40,7 +40,7 @@ const MAX_I32_HALF: i32 = i32::MAX / 2;
 
 static ENCODER_POSITION: AtomicI32 = AtomicI32::new(0);
 
-type EncoderChangeHandler = fn(i32);
+type EncoderChangeHandler = fn(i16);
 
 pub struct Encoder {
   change_handler: EncoderChangeHandler
@@ -102,7 +102,7 @@ impl Encoder {
         ENCODER_POSITION.store(0, Ordering::Relaxed);
       // else call handler function
       } else if delta != 0 {
-        (self.change_handler)(delta);
+        (self.change_handler)(delta as i16);
         LAST_POSITION = position;
       }
     }
