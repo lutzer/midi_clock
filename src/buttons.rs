@@ -1,9 +1,12 @@
 use crate::peripherals::*;
 
 use core::sync::atomic::{AtomicU16, Ordering};
+use cortex_m::interrupt::{CriticalSection};
 
 // 2 bits per button. can count to 4, can handle 8 buttons
 static BUTTON_DEBOUNCE_COUNTERS: AtomicU16 = AtomicU16::new(0);
+
+pub const BUTTON1_MASK : u8 = 0b00000001;
 
 pub struct Buttons {
   button1: Button1Gpio,
@@ -62,7 +65,7 @@ impl Buttons {
     return None;
   }
 
-  pub fn on_tick() {
+  pub fn on_timer_tick(_: &CriticalSection) {
     BUTTON_DEBOUNCE_COUNTERS.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |x| {
       let low = x & 0xFF;
       let high = x >> 8;

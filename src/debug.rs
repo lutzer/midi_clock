@@ -53,6 +53,13 @@ impl<'a> Stringable<'a> for i16 {
 }
 
 #[cfg(feature = "debug")]
+impl<'a> Stringable<'a> for bool {
+  fn into_string(self) -> &'a str {
+    return if self { "1" } else { "0" }
+  }
+}
+
+#[cfg(feature = "debug")]
 pub fn debug_print<'a, T>(s: T) where T : Stringable<'a> {
   cortex_m::interrupt::free(|cs| {
     let mut serial = G_SERIAL.borrow(cs).borrow_mut();

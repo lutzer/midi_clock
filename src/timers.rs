@@ -8,7 +8,7 @@ use stm32f1xx_hal::{
 use cortex_m::interrupt::{CriticalSection, Mutex};
 use core::cell::{ UnsafeCell, RefCell};
 
-type TimerHandler = fn();
+type TimerHandler = fn(&CriticalSection);
 
 const MAX_HANDLERS: usize = 5;
 
@@ -20,10 +20,10 @@ impl CSTimerHandler {
       (*self.0.get())[index] = Some(handler);
     }
   }
-  pub fn execute(&self, _cs: &CriticalSection) {
+  pub fn execute(&self, cs: &CriticalSection) {
     unsafe {
       for i in 0..MAX_HANDLERS {
-        (*self.0.get())[i].map(|f| { f(); } );
+        (*self.0.get())[i].map(|f| { f(cs); } );
       }
     }
   }
