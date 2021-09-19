@@ -40,7 +40,7 @@ pub struct Peripherals {
   pub usart1: Option<Usart1Serial>
 }
 
-impl<'a> Peripherals {
+impl Peripherals {
 
   pub fn init() -> Peripherals {
 

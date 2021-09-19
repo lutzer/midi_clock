@@ -42,7 +42,7 @@ use context::*;
 #[allow(unused_imports)]
 use panic_halt;
 
-static mut CONTEXT: CSContext = CS_CONTEXT_INIT;
+static CONTEXT: CSContext = CS_CONTEXT_INIT;
 
 fn on_button_press(statemachine: &mut Statemachine, changes: u8, state: u8) {
   debug!("button changed");
@@ -61,10 +61,10 @@ fn on_state_change(state: &State, clock: &mut Clock) {
   clock.set_bpm(state.bpm);
 }
 
-fn on_clock_tick(_cs: &CriticalSection) {
+fn on_clock_tick(cs: &CriticalSection) {
   debug!("clock");
-  let context = unsafe {&mut *CONTEXT.as_mut_ptr() };
-  context.triggers.fire();
+  let mut context = CONTEXT.borrow(cs).borrow_mut();
+  context.as_mut().map(|c| c.triggers.fire() );
 }
 
 #[entry]
@@ -77,11 +77,11 @@ fn main() -> ! {
   let peripherals = Peripherals::init();
 
   // create global context
-  unsafe {
-    CONTEXT.write(Context{
-      triggers: Triggers::new( peripherals.led.unwrap() )
-    });
-  }
+  let led = peripherals.led.unwrap();
+  interrupt::free(|cs| {
+    let context = Context { triggers: Triggers::new(led) };
+    CONTEXT.borrow(cs).replace(Some(context));
+  });
   
   let serial = SerialWriter::new(peripherals.usart1.unwrap());
   debug_init!(serial);
