@@ -8,6 +8,7 @@ pub enum RunState {
 #[derive(Copy, Clone)]
 pub struct State {
   pub bpm: u16,
+  pub clock_divisions: [u16; 3],
   pub running: RunState,
 }
 
@@ -27,9 +28,10 @@ impl Statemachine {
     return Statemachine { 
       state : State {
         bpm: 120,
+        clock_divisions: [1,1,1],
         running: RunState::RUNNING,
       },
-      changed: false
+      changed: true
     }
   }
 
@@ -55,5 +57,9 @@ impl Statemachine {
   pub fn button1_pressed(&mut self) {
     self.state.running = if self.state.running == RunState::STOPPED { RunState::RUNNING } else { RunState::STOPPED };
     self.changed = true;
+  }
+
+  pub fn encoder_pressed(&mut self) {
+
   }
 }

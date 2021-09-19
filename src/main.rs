@@ -10,13 +10,13 @@ mod peripherals;
 use peripherals::*;
 
 mod serial;
-use serial::{SerialWriter};
+use serial::*;
 
 mod buttons;
 use buttons::*;
 
 mod timers;
-use timers::{Timer2, Timer3};
+use timers::*;
 
 mod debug;
 use debug::*;
@@ -38,6 +38,9 @@ use statemachine::*;
 mod context;
 use context::*;
 
+mod display;
+use display::*;
+
 // When a panic occurs, stop the microcontroller
 #[allow(unused_imports)]
 use panic_halt;
@@ -50,6 +53,9 @@ fn on_button_press(statemachine: &mut Statemachine, changes: u8, state: u8) {
   if (changes & BUTTON1_MASK & state ) == 1 {
     statemachine.button1_pressed();
   }
+  if (changes * BUTTON4_MASK & state ) == 1 {
+    statemachine.encoder_pressed();
+  }
 }
 
 fn on_encoder_change(statemachine: &mut Statemachine, rotation: i16) {
@@ -57,9 +63,10 @@ fn on_encoder_change(statemachine: &mut Statemachine, rotation: i16) {
   statemachine.encoder_turn(rotation);
 }
 
-fn on_state_change(state: &State, clock: &mut Clock) {
+fn on_state_change(state: &State, clock: &mut Clock, display: &mut Display) {
   clock.set_running(state.running == RunState::RUNNING);
   clock.set_bpm(state.bpm);
+  display.update(state);
   debug!("state change (run/bpm)");
   debug!(state.running == RunState::RUNNING);
   debug!(state.bpm);
@@ -80,7 +87,6 @@ fn main() -> ! {
   // initialize peripherals
   let peripherals = Peripherals::init();
 
-
   let buttons = Buttons::new(peripherals.button1.unwrap(), peripherals.button2.unwrap(), 
     peripherals.button3.unwrap(), peripherals.button4.unwrap());
   Timer2::add_handler(0, Buttons::on_timer_tick);
@@ -90,6 +96,9 @@ fn main() -> ! {
   Timer3::add_handler(0, Clock::on_timer_tick);
   
   let encoder = Encoder::new();
+
+  let mut display = Display::new(peripherals.displayi2c.unwrap());
+  display.init();
 
   // create global context to share peripherals among interrupts
   {
@@ -114,7 +123,13 @@ fn main() -> ! {
       on_encoder_change(&mut statemachine, rotation);
     });
     statemachine.on_change().map(|state| {
-      on_state_change(&state, &mut clock);
+      on_state_change(&state, &mut clock, &mut display);
     });
+    display.on_update().map(|_| {
+      interrupt::free(|cs| {
+        display.flush(cs);
+      });
+    });
+    
   }
 }

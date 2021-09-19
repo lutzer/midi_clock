@@ -7,6 +7,7 @@ use cortex_m::interrupt::{CriticalSection};
 static BUTTON_DEBOUNCE_COUNTERS: AtomicU16 = AtomicU16::new(0);
 
 pub const BUTTON1_MASK : u8 = 0b00000001;
+pub const BUTTON4_MASK : u8 = 0b00001000;
 
 pub struct Buttons {
   button1: Button1Gpio,
