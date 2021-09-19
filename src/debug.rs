@@ -1,26 +1,12 @@
-use cortex_m::interrupt::{ Mutex };
-use core::cell::{ RefCell };
-
-use crate::SerialWriter;
+use crate::{CONTEXT};
 
 use crate::utils::{u16_to_string, i16_to_string};
-
-#[cfg(feature = "debug")]
-pub static G_SERIAL : Mutex<RefCell<Option<SerialWriter>>> = Mutex::new(RefCell::new(None));
 
 #[macro_export]
 macro_rules! debug {
   ($($rest:tt)*) => {
     #[cfg(feature = "debug")]
     debug_print($($rest)*)
-  }
-}
-
-#[macro_export]
-macro_rules! debug_init {
-  ($($serial:tt)*) => {
-    #[cfg(feature = "debug")]
-    debug_init($($serial)*)
   }
 }
 
@@ -62,16 +48,12 @@ impl<'a> Stringable<'a> for bool {
 #[cfg(feature = "debug")]
 pub fn debug_print<'a, T>(s: T) where T : Stringable<'a> {
   cortex_m::interrupt::free(|cs| {
-    let mut serial = G_SERIAL.borrow(cs).borrow_mut();
-    serial.as_mut().map(|w| {
-      w.write_str("[DEBUG] ").ok();
-      w.write_str(s.into_string()).ok();
-      w.write_str("\n\r").ok();
+    let mut context = CONTEXT.borrow(cs).borrow_mut();
+    context.as_mut().map(|ctx| {
+      let serial =  &mut ctx.serial;
+      serial.write_str("[DEBUG] ").ok();
+      serial.write_str(s.into_string()).ok();
+      serial.write_str("\n\r").ok();
     });
   });
-}
-
-#[cfg(feature = "debug")]
-pub fn debug_init(serial: SerialWriter) {
-  cortex_m::interrupt::free(|cs| G_SERIAL.borrow(cs).replace(Some(serial)));
 }

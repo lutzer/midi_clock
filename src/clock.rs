@@ -1,9 +1,5 @@
-use crate::debug;
-use crate::debug::*;
-
 use core::sync::atomic::{AtomicU16, AtomicBool, Ordering};
-use cortex_m::interrupt::{ Mutex, CriticalSection };
-use core::cell::{ RefCell };
+use cortex_m::interrupt::{ CriticalSection };
 use core::mem::MaybeUninit;
 
 pub struct Clock {
@@ -27,14 +23,10 @@ impl Clock {
 
   pub fn set_bpm(&mut self, bpm: u16) {
     self.bpm = bpm;
-    debug!("set bpm");
-    debug!(bpm);
     FREQ_OVERFLOWS.store(60000/bpm, Ordering::Relaxed);
   }
 
   pub fn set_running(&mut self, running: bool) {
-    debug!("set running");
-    debug!(running);
     RUNNING.store(running, Ordering::Relaxed);
   }
 

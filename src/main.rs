@@ -42,7 +42,8 @@ use context::*;
 #[allow(unused_imports)]
 use panic_halt;
 
-static CONTEXT: CSContext = CS_CONTEXT_INIT;
+// holds vars that need to be globally available
+pub static CONTEXT: CSContext = CS_CONTEXT_INIT;
 
 fn on_button_press(statemachine: &mut Statemachine, changes: u8, state: u8) {
   debug!("button changed");
@@ -59,12 +60,15 @@ fn on_encoder_change(statemachine: &mut Statemachine, rotation: i16) {
 fn on_state_change(state: &State, clock: &mut Clock) {
   clock.set_running(state.running == RunState::RUNNING);
   clock.set_bpm(state.bpm);
+  debug!("state change (run/bpm)");
+  debug!(state.running == RunState::RUNNING);
+  debug!(state.bpm);
 }
 
 fn on_clock_tick(cs: &CriticalSection) {
   debug!("clock");
   let mut context = CONTEXT.borrow(cs).borrow_mut();
-  context.as_mut().map(|c| c.triggers.fire() );
+  context.as_mut().map(|ctx| ctx.triggers.fire() );
 }
 
 #[entry]
@@ -76,17 +80,7 @@ fn main() -> ! {
   // initialize peripherals
   let peripherals = Peripherals::init();
 
-  // create global context
-  let led = peripherals.led.unwrap();
-  interrupt::free(|cs| {
-    let context = Context { triggers: Triggers::new(led) };
-    CONTEXT.borrow(cs).replace(Some(context));
-  });
-  
-  let serial = SerialWriter::new(peripherals.usart1.unwrap());
-  debug_init!(serial);
 
-  
   let buttons = Buttons::new(peripherals.button1.unwrap(), peripherals.button2.unwrap(), 
     peripherals.button3.unwrap(), peripherals.button4.unwrap());
   Timer2::add_handler(0, Buttons::on_timer_tick);
@@ -96,6 +90,18 @@ fn main() -> ! {
   Timer3::add_handler(0, Clock::on_timer_tick);
   
   let encoder = Encoder::new();
+
+  // create global context to share peripherals among interrupts
+  {
+    let triggers = Triggers::new(peripherals.led.unwrap());
+    Timer3::add_handler(1, Triggers::on_timer_tick);
+    let serial = SerialWriter::new(peripherals.usart1.unwrap());
+    
+    interrupt::free(|cs| {
+      let context = Context { triggers: triggers, serial: serial };
+      CONTEXT.borrow(cs).replace(Some(context));
+    });
+  }
 
   debug!("start");
   
