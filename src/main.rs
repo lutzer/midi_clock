@@ -41,6 +41,9 @@ use context::*;
 mod display;
 use display::*;
 
+mod midi;
+use midi::*;
+
 // When a panic occurs, stop the microcontroller
 #[allow(unused_imports)]
 use panic_halt;
@@ -53,13 +56,13 @@ fn on_button_press(statemachine: &mut Statemachine, changes: u8, state: u8) {
   if (changes & BUTTON1_MASK & state ) == 1 {
     statemachine.button1_pressed();
   }
-  if (changes * BUTTON4_MASK & state ) == 1 {
+  if (changes & BUTTON4_MASK & state ) == 1 {
     statemachine.encoder_pressed();
   }
 }
 
 fn on_encoder_change(statemachine: &mut Statemachine, rotation: i16) {
-  debug!("encoder turn");
+  // debug!("encoder turn");
   statemachine.encoder_turn(rotation);
 }
 
@@ -67,15 +70,19 @@ fn on_state_change(state: &State, clock: &mut Clock, display: &mut Display) {
   clock.set_running(state.running == RunState::RUNNING);
   clock.set_bpm(state.bpm);
   display.update(state);
-  debug!("state change (run/bpm)");
-  debug!(state.running == RunState::RUNNING);
-  debug!(state.bpm);
+  // debug!("state change (run/bpm)");
+  // debug!(state.running == RunState::RUNNING);
+  // debug!(state.bpm);
 }
 
-fn on_clock_tick(cs: &CriticalSection) {
-  debug!("clock");
+fn on_clock_tick(clock: u8, big_tick: bool, cs: &CriticalSection) {
   let mut context = CONTEXT.borrow(cs).borrow_mut();
-  context.as_mut().map(|ctx| ctx.triggers.fire() );
+  context.as_mut().map(|ctx| {
+    // ctx.serial.write(MidiMessage::TimingClock as u8).ok();
+    if big_tick {
+      ctx.triggers.fire()
+    }
+  });
 }
 
 #[entry]
@@ -98,6 +105,7 @@ fn main() -> ! {
   let encoder = Encoder::new();
 
   let mut display = Display::new(peripherals.displayi2c.unwrap());
+  Timer2::add_handler(1, Display::on_timer_tick);
   display.init();
 
   // create global context to share peripherals among interrupts

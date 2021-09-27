@@ -75,11 +75,8 @@ pub struct Timer3;
 impl Timer3 {
   pub fn init(tim3: TIM3, clocks: &stm32f1xx_hal::rcc::Clocks, apb1: &mut stm32f1xx_hal::rcc::APB1) {
     
-    // set timer2 to 1khz = 1ms
-    let mut timer = Timer::tim3(tim3, &clocks, apb1).start_count_down(1.khz());
-
-    // Generate an interrupt when the timer expires
-    timer.listen(Event::Update);
+    // set timer2 to 100khz = 10us
+    let mut timer = Timer::tim3(tim3, &clocks, apb1).start_count_down(1.hz());
 
     cortex_m::interrupt::free(|cs| G_TIM3.borrow(cs).replace(Some(timer)));
 
@@ -87,6 +84,24 @@ impl Timer3 {
     unsafe {
       cortex_m::peripheral::NVIC::unmask(Interrupt::TIM3);
     }
+  }
+
+  pub fn set_running(running: bool) {
+    cortex_m::interrupt::free(|cs| {
+      let mut tim3 = G_TIM3.borrow(cs).borrow_mut();
+      if running {
+        tim3.as_mut().unwrap().listen(Event::Update);
+      } else {
+        tim3.as_mut().unwrap().unlisten(Event::Update);
+      }
+    });
+  }
+
+  pub fn set_frequency(hertz: u32) {
+    cortex_m::interrupt::free(|cs| {
+      let mut tim3 = G_TIM3.borrow(cs).borrow_mut();
+      tim3.as_mut().unwrap().start((hertz).hz())
+    });
   }
 
   pub fn add_handler(index: usize, cb: TimerHandler) {

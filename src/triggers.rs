@@ -7,7 +7,7 @@ use core::sync::atomic::{AtomicBool, Ordering};
 use crate::{CONTEXT};
 
 // stop pulse after 100ms
-const TRIGGER_OVERFLOW_COUNT: u16 = 20;
+const TRIGGER_OVERFLOW_COUNT: u8 = 20;
 
 static TRIGGER_STARTED: AtomicBool = AtomicBool::new(false);
 
@@ -21,16 +21,16 @@ impl Triggers {
   }
 
   pub fn fire(&mut self) {
-    self.led1.set_low().ok();
+    self.led1.set_high().ok();
     TRIGGER_STARTED.store(true, Ordering::Relaxed);
   }
 
   fn stop_pulse(&mut self) {
-    self.led1.set_high().ok();
+    self.led1.set_low().ok();
   }
 
   pub fn on_timer_tick(cs: &CriticalSection) {
-    static mut OVERFLOWS: u16 = 0;
+    static mut OVERFLOWS: u8 = 0;
 
     if !TRIGGER_STARTED.load(Ordering:: Relaxed) {
       return;

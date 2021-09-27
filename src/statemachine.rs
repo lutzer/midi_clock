@@ -8,7 +8,7 @@ pub enum RunState {
 #[derive(Copy, Clone)]
 pub struct State {
   pub bpm: u16,
-  pub clock_divisions: [u16; 3],
+  pub clock_divisions: [u8; 3],
   pub running: RunState,
 }
 
@@ -20,7 +20,6 @@ pub struct Statemachine {
 // define state constants
 const MIN_BPM: u16 = 30;
 const MAX_BPM: u16 = 320;
-
 
 impl Statemachine {
   pub fn new() -> Statemachine {

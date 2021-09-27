@@ -14,6 +14,9 @@ use core::sync::atomic::{AtomicI32, Ordering};
 use cortex_m::interrupt::{Mutex};
 use core::cell::{RefCell};
 
+use crate::debug;
+use crate::debug::*;
+
 #[derive(Copy,Clone)]
 enum EncoderState {
   CwStart = 0x01,
@@ -118,6 +121,8 @@ fn EXTI0() {
 
     let reading = enc_pin1.as_ref().unwrap().is_low().unwrap() as u8 |
       (enc_pin2.as_ref().unwrap().is_low().unwrap() as u8) << 1;
+
+    // debug!(reading as u16);
 
     // set new state depending on reading and old state
     *STATE = get_transition((*STATE as u8) & 0x0F, reading);

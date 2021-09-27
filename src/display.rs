@@ -5,7 +5,6 @@ use embedded_graphics::{
   text::{Baseline, Text}
 };
 
-
 use cortex_m::interrupt::{CriticalSection};
 
 use ssd1306::{
@@ -18,8 +17,13 @@ use ssd1306::{
 use crate::peripherals::{DisplayI2C};
 use crate::statemachine::{State};
 use crate::utils::*;
+use core::sync::atomic::{AtomicBool, Ordering};
+
+const DISPLAY_UPDATE_OVERFLOWS: u8 = 2;
 
 pub type Ssd1306Display = ssd1306::Ssd1306<I2CInterface<DisplayI2C>, DisplaySize128x64, BufferedGraphicsMode<DisplaySize128x64>>;
+
+static UPDATE_TIME_ARRIVED: AtomicBool = AtomicBool::new(false);
 
 struct DisplayStyles<'a> {
   text: MonoTextStyle<'a, BinaryColor>
@@ -67,14 +71,28 @@ impl<'a> Display<'a> {
   }
 
   pub fn on_update(&mut self) -> Option<()> {
-    return if self.updated {
+    let update_time_arrived = UPDATE_TIME_ARRIVED.fetch_and(false, Ordering::Relaxed);
+    return if self.updated && update_time_arrived {
       self.updated = false; 
       Some(()) 
     } else { None }
   }
 
-  pub fn flush(&mut self, cs: &CriticalSection) {
+  pub fn flush(&mut self, _: &CriticalSection) {
     self.display.flush().unwrap();
+  }
+
+  pub fn on_timer_tick(_: &CriticalSection) {
+    static mut OVERFLOWS : u8 = 0;
+
+    unsafe {
+      if OVERFLOWS > DISPLAY_UPDATE_OVERFLOWS {
+        UPDATE_TIME_ARRIVED.store(true, Ordering::Relaxed);
+        OVERFLOWS = 0;
+      } else {
+        OVERFLOWS += 1;
+      }
+    }
   }
 }
 
