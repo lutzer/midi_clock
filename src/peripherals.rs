@@ -76,7 +76,7 @@ impl Peripherals {
     Timer3::init(dp.TIM3, &clocks, &mut apb1);
 
     // init encoder interrupts
-    Encoder::init(&dp.EXTI, gpioa.pa0, &mut gpioa.crl, gpiob.pb0, &mut gpiob.crl, &mut afio );
+    Encoder::init(&dp.EXTI, gpioa.pa0, gpioa.pa1, &mut gpioa.crl, &mut afio );
 
     return Peripherals {
       led: Peripherals::init_led(gpioc.pc13, &mut gpioc.crh),

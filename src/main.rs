@@ -62,7 +62,7 @@ fn on_button_press(statemachine: &mut Statemachine, changes: u8, state: u8) {
 }
 
 fn on_encoder_change(statemachine: &mut Statemachine, rotation: i16) {
-  // debug!("encoder turn");
+  debug!("encoder turn");
   statemachine.encoder_turn(rotation);
 }
 
@@ -70,9 +70,9 @@ fn on_state_change(state: &State, clock: &mut Clock, display: &mut Display) {
   clock.set_running(state.running == RunState::RUNNING);
   clock.set_bpm(state.bpm);
   display.update(state);
-  // debug!("state change (run/bpm)");
-  // debug!(state.running == RunState::RUNNING);
-  // debug!(state.bpm);
+  debug!("state change (run/bpm)");
+  debug!(state.running == RunState::RUNNING);
+  debug!(state.bpm);
 }
 
 fn on_clock_tick(clock: u8, big_tick: bool, cs: &CriticalSection) {
