@@ -3,15 +3,15 @@ pub enum RunState {
   STOPPED,
   RESTART,
   RUNNING,
-  PAUSED
+  PAUSED,
+  SYNC
 }
 
 #[derive(Copy, Clone)]
 pub struct State {
   pub bpm: u16,
   pub clock_divisions: [u8; 4],
-  pub running: RunState,
-  pub sync: bool
+  pub running: RunState
 }
 
 pub struct Statemachine {
@@ -30,8 +30,7 @@ impl Statemachine {
       state : State {
         bpm: 120,
         clock_divisions: [1,1,1,1],
-        running: RunState::STOPPED,
-        sync: false
+        running: RunState::RUNNING
       },
       changed: true
     }
@@ -70,6 +69,13 @@ impl Statemachine {
       self.state.running = RunState::RESTART;
     }
    self.changed = true;
+  }
+
+  pub fn button3_pressed(&mut self, pressed : bool) {
+    if pressed {
+      self.state.running = RunState::SYNC;
+      self.changed = true;
+    }
   }
 
   pub fn encoder_pressed(&mut self, pressed : bool) {

@@ -59,7 +59,7 @@ impl Peripherals {
     // set clock frequency to internal 8mhz oscillator
     let rcc = dp.RCC.constrain();
     let mut flash = dp.FLASH.constrain();
-    let clocks = rcc.cfgr.sysclk(8.mhz()).freeze(&mut flash.acr);
+    let clocks = rcc.cfgr.use_hse(8.mhz()).sysclk(72.mhz()).pclk1(36.mhz()).pclk2(36.mhz()).adcclk(12.mhz()).freeze(&mut flash.acr);
 
     // access PGIOC and PGIOB registers and prepare the alternate function I/O registers
     let mut apb1 = rcc.apb1;

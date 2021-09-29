@@ -8,7 +8,7 @@ static BUTTON_DEBOUNCE_COUNTERS: AtomicU16 = AtomicU16::new(0);
 
 pub const BUTTON1_MASK : u8 = 0b00000001;
 pub const BUTTON2_MASK : u8 = 0b00000010;
-// pub const BUTTON3_MASK : u8 = 0b00000100;
+pub const BUTTON3_MASK : u8 = 0b00000100;
 pub const BUTTON4_MASK : u8 = 0b00001000;
 
 const TIMER_OVERFLOW_COUNT: u8 = 20;

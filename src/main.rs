@@ -59,10 +59,12 @@ fn on_button_press(statemachine: &mut Statemachine, changes: u8, state: u8) {
   if (changes & BUTTON2_MASK ) != 0 {
     statemachine.button2_pressed(changes & BUTTON2_MASK & state > 0);
   }
+  if (changes & BUTTON3_MASK & state ) > 0 {
+    statemachine.button3_pressed(changes & BUTTON3_MASK & state > 0);
+  }
   if (changes & BUTTON4_MASK & state ) > 0 {
     statemachine.encoder_pressed(changes & BUTTON4_MASK & state > 0);
   }
-  
 }
 
 fn on_encoder_change(statemachine: &mut Statemachine, rotation: i16) {
@@ -77,11 +79,10 @@ fn on_state_change(state: &State, clock: &mut Clock, display: &mut Display) {
   debug!(state.running as u16);
   debug!(state.bpm);
 
-  
   if let Some(prev_state) = unsafe { PREV_STATE } {
     // check for state changes
     if prev_state.running != state.running {
-      clock.set_running(state.running == RunState::RUNNING);
+      clock.set_running(state.running == RunState::RUNNING || state.running == RunState::SYNC);
       send_midi_ctrl_msg(state.running, prev_state.running);
     }
     if prev_state.bpm != state.bpm {
@@ -98,7 +99,7 @@ fn on_state_change(state: &State, clock: &mut Clock, display: &mut Display) {
   unsafe { PREV_STATE = Some(*state) }
 }
 
-fn send_midi_ctrl_msg(current: RunState, prev: RunState) {
+fn send_midi_ctrl_msg(current: RunState, _: RunState) {
   interrupt::free(|cs| {
     let mut context = CONTEXT.borrow(cs).borrow_mut();
     context.as_mut().map(|ctx| {
@@ -106,7 +107,8 @@ fn send_midi_ctrl_msg(current: RunState, prev: RunState) {
         RunState::RUNNING => ctx.serial.write(2, MidiMessage::Continue as u8).ok(),
         RunState::PAUSED => ctx.serial.write(2, MidiMessage::Stop as u8).ok(),
         RunState::STOPPED => ctx.serial.write(2, MidiMessage::Stop as u8).ok(),
-        RunState::RESTART => ctx.serial.write(2, MidiMessage::Start as u8).ok()
+        RunState::RESTART => ctx.serial.write(2, MidiMessage::Start as u8).ok(),
+        _ => None
       }
     });
   });

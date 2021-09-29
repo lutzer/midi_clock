@@ -21,6 +21,7 @@ impl Clock {
     // let mut clock = unsafe { &mut *CLOCK.as_mut_ptr() };
     let mut clock = Clock{ bpm: 1 };
     clock.set_bpm(bpm);
+    clock.set_running(false);
     clock.set_running(running);
     clock.set_divisions([1,1,1]);
     return clock;
@@ -42,7 +43,11 @@ impl Clock {
   }
 
   pub fn set_running(&mut self, running: bool) {
-    Timer3::set_running(running);
+    static mut PREV: bool = true;
+    if unsafe { PREV != running } {
+      Timer3::set_running(running);
+    }
+    unsafe { PREV = running }
   }
 
 
