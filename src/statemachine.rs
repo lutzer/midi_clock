@@ -1,6 +1,7 @@
 #[derive(Copy, Clone, PartialEq)]
 pub enum RunState {
   STOPPED,
+  RESTART,
   RUNNING,
   PAUSED
 }
@@ -29,7 +30,7 @@ impl Statemachine {
       state : State {
         bpm: 120,
         clock_divisions: [1,1,1,1],
-        running: RunState::RUNNING,
+        running: RunState::STOPPED,
         sync: false
       },
       changed: true
@@ -55,17 +56,23 @@ impl Statemachine {
     self.changed = true;
   }
 
-  pub fn button1_pressed(&mut self) {
-    self.state.running = if self.state.running != RunState::RUNNING { RunState::RUNNING } else { RunState::PAUSED };
-    self.changed = true;
+  pub fn button1_pressed(&mut self, pressed : bool) {
+    if pressed {
+      self.state.running = if self.state.running != RunState::RUNNING { RunState::RUNNING } else { RunState::PAUSED };
+      self.changed = true;
+    }
   }
 
-  pub fn button2_pressed(&mut self) {
-    self.state.running = RunState::STOPPED;
-    self.changed = true;
+  pub fn button2_pressed(&mut self, pressed : bool) {
+    if pressed {
+      self.state.running = RunState::STOPPED;
+    } else {
+      self.state.running = RunState::RESTART;
+    }
+   self.changed = true;
   }
 
-  pub fn encoder_pressed(&mut self) {
+  pub fn encoder_pressed(&mut self, pressed : bool) {
 
   }
 }

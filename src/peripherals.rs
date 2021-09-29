@@ -95,7 +95,8 @@ impl Peripherals {
     pc13: gpio::gpioc::PC13<gpio::Input<gpio::Floating>>, 
     crh: &mut gpio::gpioc::CRH
   ) -> Option<Led1Gpio> {
-    let led = pc13.into_push_pull_output(crh);
+    let mut led = pc13.into_push_pull_output(crh);
+    led.set_high().ok();
     return Some(led);
   }
 
