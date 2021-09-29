@@ -56,10 +56,15 @@ impl Peripherals {
     let dp = pac::Peripherals::take().unwrap();
     // let cp = cortex_m::Peripherals::take().unwrap();
 
-    // set clock frequency to internal 8mhz oscillator
     let rcc = dp.RCC.constrain();
     let mut flash = dp.FLASH.constrain();
-    let clocks = rcc.cfgr.use_hse(8.mhz()).sysclk(72.mhz()).pclk1(36.mhz()).pclk2(36.mhz()).adcclk(12.mhz()).freeze(&mut flash.acr);
+    let clocks = rcc.cfgr
+      .use_hse(8.mhz()) // set clock frequency to external 8mhz oscillator
+      .sysclk(72.mhz()) // set sysclock 
+      .pclk1(36.mhz()) // clock for apb1 prescaler -> TIM1
+      .pclk2(36.mhz()) // clock for apb2 prescaler -> TIM2,3,4
+      .adcclk(12.mhz()) // clock for analog digital converters
+      .freeze(&mut flash.acr);
 
     // access PGIOC and PGIOB registers and prepare the alternate function I/O registers
     let mut apb1 = rcc.apb1;
