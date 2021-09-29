@@ -11,7 +11,6 @@ use stm32f1xx_hal::{
   i2c::{BlockingI2c, DutyCycle, Mode}
 };
 
-
 use crate::timers::*;
 use crate::encoder::*;
 
@@ -47,7 +46,7 @@ pub struct Peripherals {
   pub button3: Option<Button3Gpio>,
   pub button4: Option<Button4Gpio>,
   pub usart1: Option<Usart1Serial>,
-  // pub usart2: Option<Usart2Serial>,
+  pub usart2: Option<Usart2Serial>,
   pub displayi2c: Option<DisplayI2C>
 }
 
@@ -86,9 +85,9 @@ impl Peripherals {
       button3: Peripherals::init_button3(gpioa.pa7, &mut gpioa.crl),
       button4: Peripherals::init_button4(gpioa.pa6, &mut gpioa.crl),
 
-      usart1: Peripherals::init_usart1(dp.USART1, gpioa.pa9, gpioa.pa10, &mut gpioa.crh, &mut afio, &clocks, apb2),
-      // usart2: Peripherals::init_usart2(dp.USART2, gpioa.pa2, gpioa.pa3, &mut gpioa.crl, &mut afio, &clocks, apb1),
-      displayi2c: Peripherals::init_displayi2c(dp.I2C1, gpiob.pb8, gpiob.pb9, &mut gpiob.crh, &mut afio, &clocks, apb1)
+      usart1: Peripherals::init_usart1(dp.USART1, gpioa.pa9, gpioa.pa10, &mut gpioa.crh, &mut afio, &clocks, &mut apb2),
+      usart2: Peripherals::init_usart2(dp.USART2, gpioa.pa2, gpioa.pa3, &mut gpioa.crl, &mut afio, &clocks, &mut apb1),
+      displayi2c: Peripherals::init_displayi2c(dp.I2C1, gpiob.pb8, gpiob.pb9, &mut gpiob.crh, &mut afio, &clocks, &mut apb1)
     };
   }
 
@@ -96,7 +95,7 @@ impl Peripherals {
     pc13: gpio::gpioc::PC13<gpio::Input<gpio::Floating>>, 
     crh: &mut gpio::gpioc::CRH
   ) -> Option<Led1Gpio> {
-    let mut led = pc13.into_push_pull_output(crh);
+    let led = pc13.into_push_pull_output(crh);
     return Some(led);
   }
 
@@ -139,7 +138,7 @@ impl Peripherals {
     crh: &mut gpio::gpioa::CRH,
     afio: &mut afio::Parts, 
     clocks: &stm32f1xx_hal::rcc::Clocks, 
-    mut apb2: stm32f1xx_hal::rcc::APB2
+    apb2: &mut stm32f1xx_hal::rcc::APB2
   ) -> Option<Usart1Serial> {
     let tx = pa9.into_alternate_push_pull(crh);
     let rx = pa10;
@@ -150,7 +149,7 @@ impl Peripherals {
       &mut afio.mapr,
       Config::default().baudrate(115200.bps()),
       *clocks,
-      &mut apb2,
+      apb2,
     );
     return Some(serial);
   }
@@ -162,7 +161,7 @@ impl Peripherals {
     crl: &mut gpio::gpioa::CRL,
     afio: &mut afio::Parts, 
     clocks: &stm32f1xx_hal::rcc::Clocks, 
-    mut apb1: stm32f1xx_hal::rcc::APB1
+    apb1: &mut stm32f1xx_hal::rcc::APB1
   ) -> Option<Usart2Serial> {
     let tx = pa2.into_alternate_push_pull(crl);
     let rx = pa3;
@@ -171,9 +170,9 @@ impl Peripherals {
       usart2,
       (tx, rx),
       &mut afio.mapr,
-      Config::default().baudrate(115200.bps()),
+      Config::default().baudrate(31250.bps()),
       *clocks,
-      &mut apb1,
+      apb1,
     );
     return Some(serial);
   }
@@ -185,7 +184,7 @@ impl Peripherals {
     crh: &mut gpio::gpiob::CRH,
     afio: &mut afio::Parts,
     clocks: &stm32f1xx_hal::rcc::Clocks,
-    mut apb1: stm32f1xx_hal::rcc::APB1
+    apb1: &mut stm32f1xx_hal::rcc::APB1
   ) -> Option<DisplayI2C> {
     // init i2c
     let scl = pb8.into_alternate_open_drain(crh);
@@ -200,7 +199,7 @@ impl Peripherals {
           duty_cycle: DutyCycle::Ratio16to9,
       },
       *clocks,
-      &mut apb1,
+      apb1,
       100, // start timeout
       5, // start retries
       100, // addr timeout

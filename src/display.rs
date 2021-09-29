@@ -19,7 +19,7 @@ use crate::statemachine::{State};
 use crate::utils::*;
 use core::sync::atomic::{AtomicBool, Ordering};
 
-const DISPLAY_UPDATE_OVERFLOWS: u8 = 2;
+const DISPLAY_UPDATE_OVERFLOWS: u8 = 50;
 
 pub type Ssd1306Display = ssd1306::Ssd1306<I2CInterface<DisplayI2C>, DisplaySize128x64, BufferedGraphicsMode<DisplaySize128x64>>;
 

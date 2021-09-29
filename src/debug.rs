@@ -51,9 +51,9 @@ pub fn debug_print<'a, T>(s: T) where T : Stringable<'a> {
     let mut context = CONTEXT.borrow(cs).borrow_mut();
     context.as_mut().map(|ctx| {
       let serial =  &mut ctx.serial;
-      serial.write_str("[DEBUG] ").ok();
-      serial.write_str(s.into_string()).ok();
-      serial.write_str("\n\r").ok();
+      serial.write_str(1,"[DEBUG] ").ok();
+      serial.write_str(1,s.into_string()).ok();
+      serial.write_str(1,"\n\r").ok();
     });
   });
 }

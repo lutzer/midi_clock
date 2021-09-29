@@ -9,13 +9,10 @@ use stm32f1xx_hal::{
 
 use core::sync::atomic::{AtomicI32, Ordering};
 
-use cortex_m::interrupt::{Mutex, CriticalSection};
+use cortex_m::interrupt::{Mutex};
 use core::cell::{RefCell};
 
 use embedded_hal::digital::v2::InputPin;
-
-use crate::debug;
-use crate::debug::*;
 
 #[derive(Copy,Clone)]
 enum EncoderState {
@@ -124,13 +121,9 @@ impl Encoder {
 fn on_interrupt(reading: u8) {
   static mut STATE: EncoderState = EncoderState::Undefined;
 
-  
-
   unsafe { 
     STATE = get_transition((STATE as u8) & 0x0F, reading);
     
-    // debug!(reading as u16);
-
     if STATE as u8 == EncoderState::CwFinal as u8 {
       ENCODER_POSITION.fetch_add(1, Ordering::Relaxed);
     } else if STATE as u8 == EncoderState::CcwFinal as u8 {

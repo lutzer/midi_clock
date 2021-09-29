@@ -6,8 +6,8 @@ use core::sync::atomic::{AtomicBool, Ordering};
 
 use crate::{CONTEXT};
 
-// stop pulse after 100ms
-const TRIGGER_OVERFLOW_COUNT: u8 = 20;
+// stop pulse after 50ms
+const TIMER_OVERFLOW_COUNT: u8 = 50;
 
 static TRIGGER_STARTED: AtomicBool = AtomicBool::new(false);
 
@@ -21,31 +21,33 @@ impl Triggers {
   }
 
   pub fn fire(&mut self) {
-    self.led1.set_high().ok();
+    self.start_pulse();
+  }
+
+  fn start_pulse(&mut self) {
+    self.led1.set_low().ok();
     TRIGGER_STARTED.store(true, Ordering::Relaxed);
   }
 
   fn stop_pulse(&mut self) {
-    self.led1.set_low().ok();
+    self.led1.set_high().ok();
+    TRIGGER_STARTED.store(false, Ordering::Relaxed);
   }
 
   pub fn on_timer_tick(cs: &CriticalSection) {
     static mut OVERFLOWS: u8 = 0;
 
     if !TRIGGER_STARTED.load(Ordering:: Relaxed) {
+      unsafe { OVERFLOWS = 0 } // reset overflows
       return;
     }
-
-    unsafe {
-      if OVERFLOWS > TRIGGER_OVERFLOW_COUNT {
-        // stop trigger pulse
-        let mut context = CONTEXT.borrow(cs).borrow_mut();
-        context.as_mut().map(|ctx| ctx.triggers.stop_pulse() );
-        OVERFLOWS = 0;
-        TRIGGER_STARTED.store(false, Ordering::Relaxed);
-      } else {
-        OVERFLOWS += 1;
-      }
+  
+    if unsafe { OVERFLOWS > TIMER_OVERFLOW_COUNT } {
+      // stop trigger pulse
+      let mut context = CONTEXT.borrow(cs).borrow_mut();
+      context.as_mut().map(|ctx| ctx.triggers.stop_pulse() );
+    } else {
+      unsafe { OVERFLOWS += 1; }
     }
   }
 }

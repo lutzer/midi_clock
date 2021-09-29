@@ -1,6 +1,8 @@
-use core::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use core::sync::atomic::{AtomicU32, Ordering};
 use cortex_m::interrupt::{ CriticalSection };
-use core::mem::MaybeUninit;
+use cortex_m::interrupt;
+
+use crate::utils::{CSCell};
 
 pub struct Clock {
   bpm: u16
@@ -10,11 +12,9 @@ use crate::timers::{Timer3};
 
 type ClockTickHandler = fn(u8, bool, &CriticalSection);
 
-static mut CLOCK_TICK_HANDLER: MaybeUninit<ClockTickHandler> = MaybeUninit::uninit();
+static CLOCK_TICK_HANDLER : CSCell<Option<ClockTickHandler>> = CSCell::new(None);
 
 static CLOCK_DIVISIONS: AtomicU32 = AtomicU32::new(0);
-
-const MAX_DIVISION: u16 = 24;
 
 impl Clock {
   pub fn new(bpm: u16, running: bool) -> Clock {
@@ -36,7 +36,8 @@ impl Clock {
 
   pub fn set_bpm(&mut self, bpm: u16) {
     self.bpm = bpm;
-    let frequency_in_hertz : u32 = (self.bpm as u32) * (MAX_DIVISION as u32) / 60;
+    // sends 24 ticks for every quarternote
+    let frequency_in_hertz : u32 = (self.bpm as u32) * 24 / 60;
     Timer3::set_frequency(frequency_in_hertz);
   }
 
@@ -46,16 +47,15 @@ impl Clock {
 
 
   pub fn on_tick<'a>(&self, cb: ClockTickHandler) {
-    unsafe { CLOCK_TICK_HANDLER.write(cb); }
+    interrupt::free( |cs| CLOCK_TICK_HANDLER.set(Some(cb), cs) );
   }
 
   pub fn on_timer_tick(cs : &CriticalSection) {
     static mut OVERFLOWS : u16 = 0;
 
     unsafe {
-      
-      (*CLOCK_TICK_HANDLER.as_mut_ptr())(0, OVERFLOWS == 0, cs); 
-      OVERFLOWS = OVERFLOWS % (MAX_DIVISION + 1);
+      CLOCK_TICK_HANDLER.get(cs).map(|f| f(0, OVERFLOWS == 0, cs) ); 
+      OVERFLOWS = (OVERFLOWS + 1) % 24; // send a big step every 24 steps
     }
   }
 }

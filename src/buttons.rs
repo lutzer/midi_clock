@@ -7,7 +7,11 @@ use cortex_m::interrupt::{CriticalSection};
 static BUTTON_DEBOUNCE_COUNTERS: AtomicU16 = AtomicU16::new(0);
 
 pub const BUTTON1_MASK : u8 = 0b00000001;
+pub const BUTTON2_MASK : u8 = 0b00000010;
+// pub const BUTTON3_MASK : u8 = 0b00000100;
 pub const BUTTON4_MASK : u8 = 0b00001000;
+
+const TIMER_OVERFLOW_COUNT: u8 = 20;
 
 pub struct Buttons {
   button1: Button1Gpio,
@@ -67,13 +71,20 @@ impl Buttons {
   }
 
   pub fn on_timer_tick(_: &CriticalSection) {
-    BUTTON_DEBOUNCE_COUNTERS.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |x| {
-      let low = x & 0xFF;
-      let high = x >> 8;
+    static mut OVERFLOWS : u8 = 0;
 
-      // bitwise vertical increment until count to 4 = 0b11 in each column
-      let increment : u16 = (x | high) | ((!(low | high) | high) << 8);
-      return Some(increment)
-    }).ok();
+    if unsafe { OVERFLOWS > TIMER_OVERFLOW_COUNT } {
+      BUTTON_DEBOUNCE_COUNTERS.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |x| {
+        let low = x & 0xFF;
+        let high = x >> 8;
+
+        // bitwise vertical increment until count to 4 = 0b11 in each column
+        let increment : u16 = (x | high) | ((!(low | high) | high) << 8);
+        return Some(increment)
+      }).ok();
+      unsafe { OVERFLOWS = 0; }
+    } else {
+      unsafe { OVERFLOWS += 1; }
+    }
   }
 }
