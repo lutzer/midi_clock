@@ -1,7 +1,7 @@
 use crate::peripherals::{Led1Gpio};
 
 pub use embedded_hal::digital::v2::{OutputPin, InputPin};
-use cortex_m::interrupt::{CriticalSection};
+use cortex_m::interrupt;
 use core::sync::atomic::{AtomicBool, Ordering};
 
 use crate::{CONTEXT};
@@ -34,7 +34,7 @@ impl Triggers {
     TRIGGER_STARTED.store(false, Ordering::Relaxed);
   }
 
-  pub fn on_timer_tick(cs: &CriticalSection) {
+  pub fn on_timer_tick() {
     static mut OVERFLOWS: u8 = 0;
 
     if !TRIGGER_STARTED.load(Ordering:: Relaxed) {
@@ -44,8 +44,10 @@ impl Triggers {
   
     if unsafe { OVERFLOWS > TIMER_OVERFLOW_COUNT } {
       // stop trigger pulse
-      let mut context = CONTEXT.borrow(cs).borrow_mut();
-      context.as_mut().map(|ctx| ctx.triggers.stop_pulse() );
+      interrupt::free(|cs| {
+        let mut context = CONTEXT.borrow(cs).borrow_mut();
+        context.as_mut().map(|ctx| ctx.triggers.stop_pulse() );
+      })
     } else {
       unsafe { OVERFLOWS += 1; }
     }

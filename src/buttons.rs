@@ -1,7 +1,5 @@
 use crate::peripherals::*;
-
 use core::sync::atomic::{AtomicU16, Ordering};
-use cortex_m::interrupt::{CriticalSection};
 
 // 2 bits per button. can count to 4, can handle 8 buttons
 static BUTTON_DEBOUNCE_COUNTERS: AtomicU16 = AtomicU16::new(0);
@@ -70,7 +68,7 @@ impl Buttons {
     return None;
   }
 
-  pub fn on_timer_tick(_: &CriticalSection) {
+  pub fn on_timer_tick() {
     static mut OVERFLOWS : u8 = 0;
 
     if unsafe { OVERFLOWS > TIMER_OVERFLOW_COUNT } {

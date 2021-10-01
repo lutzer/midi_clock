@@ -30,10 +30,21 @@ impl<T> CSCell<T> {
       (*self.0.get()) = value;
     }
   }
+
+
   pub fn get(&self, _: &CriticalSection) -> &mut T {
     unsafe {
       return &mut *self.0.get();
     }
   }
+
+  pub unsafe fn set_unsafe(&self, value: T) {
+    (*self.0.get()) = value;
+  }
+
+  pub unsafe fn get_unsafe(&self) -> &mut T {
+    return &mut *self.0.get();
+  }
+
 }
 unsafe impl<T> Sync for CSCell<T> {}

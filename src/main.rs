@@ -19,7 +19,6 @@ mod timers;
 use timers::*;
 
 mod debug;
-use debug::*;
 
 mod utils;
 
@@ -59,10 +58,10 @@ fn on_button_press(statemachine: &mut Statemachine, changes: u8, state: u8) {
   if (changes & BUTTON2_MASK ) != 0 {
     statemachine.button2_pressed(changes & BUTTON2_MASK & state > 0);
   }
-  if (changes & BUTTON3_MASK & state ) > 0 {
+  if (changes & BUTTON3_MASK) > 0 {
     statemachine.button3_pressed(changes & BUTTON3_MASK & state > 0);
   }
-  if (changes & BUTTON4_MASK & state ) > 0 {
+  if (changes & BUTTON4_MASK) > 0 {
     statemachine.encoder_pressed(changes & BUTTON4_MASK & state > 0);
   }
 }
@@ -114,7 +113,7 @@ fn send_midi_ctrl_msg(current: RunState, _: RunState) {
   });
 }
 
-fn on_clock_tick(clock: u8, big_tick: bool, cs: &CriticalSection) {
+fn on_clock_tick(_clock: u8, big_tick: bool, cs: &CriticalSection) {
   let mut context = CONTEXT.borrow(cs).borrow_mut();
   context.as_mut().map(|ctx| {
     ctx.serial.write(2, MidiMessage::TimingClock as u8).ok();
@@ -139,7 +138,7 @@ fn main() -> ! {
 
   let mut clock = Clock::new(initial_state.bpm, initial_state.running == RunState::RUNNING);
   clock.on_tick(on_clock_tick);
-  Timer3::add_handler(Clock::on_timer_tick);
+  Timer3::set_handler(Clock::on_timer_tick);
   
   let encoder = Encoder::new();
 
@@ -173,9 +172,9 @@ fn main() -> ! {
       on_state_change(&state, &mut clock, &mut display);
     });
     display.on_update().map(|_| {
-      interrupt::free(|cs| {
-        display.flush(cs);
-      });
+      // interrupt::free(|cs| {
+      //   display.flush(cs);
+      // });
     });
     
   }

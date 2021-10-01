@@ -82,7 +82,7 @@ impl<'a> Display<'a> {
     self.display.flush().unwrap();
   }
 
-  pub fn on_timer_tick(_: &CriticalSection) {
+  pub fn on_timer_tick() {
     static mut OVERFLOWS : u8 = 0;
 
     unsafe {

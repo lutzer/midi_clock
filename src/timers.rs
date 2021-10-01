@@ -10,7 +10,8 @@ use core::cell::{RefCell};
 
 use crate::utils::{CSCell};
 
-type TimerHandler = fn(&CriticalSection);
+type CSTimerHandler = fn(&CriticalSection);
+type TimerHandler = fn();
 
 const MAX_TIM2_HANDLERS: usize = 3;
 
@@ -37,27 +38,28 @@ impl Timer2  {
   }
 
   pub fn add_handler(index: usize, cb: TimerHandler) {
-    cortex_m::interrupt::free(|cs| {
-      let handlers = TIMER_2_HANDLERS.get(cs);
+    unsafe {
+      let handlers = TIMER_2_HANDLERS.get_unsafe();
       handlers[index] = Some(cb);
-      TIMER_2_HANDLERS.set(*handlers, cs);
-    })
+      TIMER_2_HANDLERS.set_unsafe(*handlers);
+    }
   }
 }
 
 #[interrupt]
 fn TIM2() {
+  let handlers = unsafe { TIMER_2_HANDLERS.get_unsafe() };
+  for handler in handlers {
+    handler.map(|f| f());
+  }
+
   cortex_m::interrupt::free(|cs| {
-    let handlers = TIMER_2_HANDLERS.get(cs);
-    for handler in handlers {
-      handler.map(|f| f(cs));
-    }
     let mut tim2 = G_TIM2.borrow(cs).borrow_mut();
     tim2.as_mut().unwrap().clear_update_interrupt_flag();
   });
 }
 
-static TIMER_3_HANDLER: CSCell<Option<TimerHandler>> = CSCell::new(None);
+static TIMER_3_HANDLER: CSCell<Option<CSTimerHandler>> = CSCell::new(None);
 static G_TIM3: Mutex<RefCell<Option<CountDownTimer<TIM3>>>> = Mutex::new(RefCell::new(None));
 
 pub struct Timer3;
@@ -93,7 +95,7 @@ impl Timer3 {
     });
   }
 
-  pub fn add_handler(cb: TimerHandler) {
+  pub fn set_handler(cb: CSTimerHandler) {
     cortex_m::interrupt::free(|cs| {
       TIMER_3_HANDLER.set(Some(cb), cs);
     })
