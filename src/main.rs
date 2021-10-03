@@ -55,7 +55,7 @@ fn on_button_press(statemachine: &mut Statemachine, changes: u8, state: u8) {
   if (changes & BUTTON1_MASK & state ) > 0 {
     statemachine.button1_pressed(changes & BUTTON1_MASK & state > 0);
   }
-  if (changes & BUTTON2_MASK ) != 0 {
+  if (changes & BUTTON2_MASK ) > 0 {
     statemachine.button2_pressed(changes & BUTTON2_MASK & state > 0);
   }
   if (changes & BUTTON3_MASK) > 0 {
@@ -172,9 +172,9 @@ fn main() -> ! {
       on_state_change(&state, &mut clock, &mut display);
     });
     display.on_update().map(|_| {
-      // interrupt::free(|cs| {
-      //   display.flush(cs);
-      // });
+      interrupt::free(|cs| {
+        display.flush(cs);
+      });
     });
     
   }
