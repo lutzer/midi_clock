@@ -172,9 +172,9 @@ fn main() -> ! {
       on_state_change(&state, &mut clock, &mut display);
     });
     display.on_update().map(|_| {
-      interrupt::free(|cs| {
-        display.flush(cs);
-      });
+      // interrupt::free(|cs| {
+      //   display.flush(cs);
+      // });
     });
     
   }

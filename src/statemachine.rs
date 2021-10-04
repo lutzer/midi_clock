@@ -28,7 +28,7 @@ impl Statemachine {
     // set initial state
     return Statemachine { 
       state : State {
-        bpm: 120,
+        bpm: 300,
         clock_divisions: [1,1,1,1],
         running: RunState::RUNNING
       },
@@ -78,7 +78,7 @@ impl Statemachine {
     }
   }
 
-  pub fn encoder_pressed(&mut self, pressed : bool) {
+  pub fn encoder_pressed(&mut self, _pressed : bool) {
 
   }
 }

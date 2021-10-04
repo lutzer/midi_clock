@@ -8,8 +8,6 @@ use stm32f1xx_hal::{
 use cortex_m::interrupt::{CriticalSection, Mutex};
 use core::cell::{RefCell};
 
-use core::sync::atomic::{AtomicU32, Ordering};
-
 use crate::utils::{CSCell};
 
 type CSTimerHandler = fn(&CriticalSection);
@@ -57,13 +55,15 @@ fn TIM2() {
 
   cortex_m::interrupt::free(|cs| {
     let mut tim2 = G_TIM2.borrow(cs).borrow_mut();
-    tim2.as_mut().unwrap().clear_update_interrupt_flag();
+    tim2.as_mut().map(|t| {
+      t.reset();
+      t.clear_update_interrupt_flag();
+    })
   });
 }
 
 static TIMER_3_HANDLER: CSCell<Option<CSTimerHandler>> = CSCell::new(None);
 static G_TIM3: Mutex<RefCell<Option<CountDownTimer<TIM3>>>> = Mutex::new(RefCell::new(None));
-static FREQUENCY: AtomicU32 = AtomicU32::new(1);
 
 pub struct Timer3;
 impl Timer3 {
@@ -83,16 +83,19 @@ impl Timer3 {
   pub fn set_running(running: bool) {
     cortex_m::interrupt::free(|cs| {
       let mut tim3 = G_TIM3.borrow(cs).borrow_mut();
-      if running {
-        tim3.as_mut().unwrap().listen(Event::Update);
-      } else {
-        tim3.as_mut().unwrap().unlisten(Event::Update);
-      }
+      tim3.as_mut().map(|t| {
+        if running {
+          t.reset();
+          t.listen(Event::Update);
+        } else {
+          t.unlisten(Event::Update);
+        }
+      });
+      
     });
   }
 
   pub fn set_frequency(hertz: u32) {
-    FREQUENCY.store(hertz, Ordering::Relaxed);
     cortex_m::interrupt::free(|cs| {
       let mut tim3 = G_TIM3.borrow(cs).borrow_mut();
       tim3.as_mut().unwrap().start((hertz).hz())
@@ -108,14 +111,12 @@ impl Timer3 {
 
 #[interrupt]
 fn TIM3() {
-  let freq = FREQUENCY.load(Ordering::Relaxed);
   cortex_m::interrupt::free(|cs| {
     TIMER_3_HANDLER.get(cs).map(|f| f(cs) );
     let mut tim3 = G_TIM3.borrow(cs).borrow_mut();
     tim3.as_mut().map(|t| {
+      t.reset();
       t.clear_update_interrupt_flag();
-      t.start((freq).hz());
     });
-    // tim3.as_mut().unwrap().clear_update_interrupt_flag();
   });
 }

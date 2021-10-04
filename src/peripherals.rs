@@ -176,7 +176,7 @@ impl Peripherals {
       usart2,
       (tx, rx),
       &mut afio.mapr,
-      Config::default().baudrate(31250.bps()),
+      Config::default().baudrate( if cfg!(feature="clock_test") { 38400.bps()} else { 31250.bps() }),
       *clocks,
       apb1,
     );
