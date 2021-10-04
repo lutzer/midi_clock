@@ -10,6 +10,7 @@ macro_rules! debug {
 pub mod debug_methods {
   use crate::{CONTEXT};
   use crate::utils::{u16_to_string, i16_to_string};
+  use crate::statemachine::State;
 
   pub trait Stringable<'a> {
     fn into_string(self) -> &'a str;
@@ -40,6 +41,14 @@ pub mod debug_methods {
       return if self { "1" } else { "0" }
     }
   }
+
+  // impl<'a> Stringable<'a> for State {
+  //   fn into_string(self) -> &'a str {
+  //     let bpm = u16_to_string(self.bpm);
+  //     let s = concat!["run", bpm];
+  //     return s;
+  //   }
+  // }
   
   pub fn debug_print<'a, T>(s: T) where T : Stringable<'a> {
     cortex_m::interrupt::free(|cs| {
