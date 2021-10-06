@@ -134,22 +134,22 @@ fn main() -> ! {
 
   let buttons = Buttons::new(peripherals.button1.unwrap(), peripherals.button2.unwrap(), 
     peripherals.button3.unwrap(), peripherals.button4.unwrap());
-  Timer2::add_handler(0, Buttons::on_timer_tick);
+  Timer3::add_handler(0, Buttons::on_timer_tick);
 
   let mut clock = Clock::new(initial_state.bpm, initial_state.running == RunState::RUNNING);
   clock.on_tick(on_clock_tick);
-  Timer3::set_handler(Clock::on_timer_tick);
+  Timer2::set_handler(Clock::on_timer_tick);
   
   let encoder = Encoder::new();
 
   let mut display = Display::new(peripherals.displayi2c.unwrap());
-  Timer2::add_handler(1, Display::on_timer_tick);
+  Timer3::add_handler(1, Display::on_timer_tick);
   display.init();
 
   // create global context to share peripherals among interrupts
   {
     let triggers = Triggers::new(peripherals.led.unwrap());
-    Timer2::add_handler(2, Triggers::on_timer_tick);
+    Timer3::add_handler(2, Triggers::on_timer_tick);
     let serial = SerialWriter::new(peripherals.usart1.unwrap(), peripherals.usart2.unwrap());
     
     interrupt::free(|cs| {

@@ -28,7 +28,7 @@ impl Statemachine {
     // set initial state
     return Statemachine { 
       state : State {
-        bpm: 300,
+        bpm: 124,
         clock_divisions: [1,1,1,1],
         running: RunState::RUNNING
       },

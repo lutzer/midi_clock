@@ -8,7 +8,7 @@ pub struct Clock {
   bpm: u16
 }
 
-use crate::timers::{Timer3};
+use crate::timers::{Timer2};
 
 type ClockTickHandler = fn(u8, bool, &CriticalSection);
 
@@ -38,14 +38,14 @@ impl Clock {
   pub fn set_bpm(&mut self, bpm: u16) {
     self.bpm = bpm;
     // sends 24 ticks for every quarternote
-    let frequency_in_hertz : u32 = (self.bpm as u32) * 24 / 60;
-    Timer3::set_frequency(frequency_in_hertz);
+    let intervall_in_us : u32 = 60 * 1000 * 1000 / ((self.bpm as u32) * 24);
+    Timer2::set_interval(intervall_in_us);
   }
 
   pub fn set_running(&mut self, running: bool) {
     static mut PREV: bool = true;
     if unsafe { PREV != running } {
-      Timer3::set_running(running);
+      Timer2::set_running(running);
     }
     unsafe { PREV = running }
   }
