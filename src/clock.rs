@@ -4,6 +4,8 @@ use cortex_m::interrupt;
 
 use crate::utils::{CSCell};
 
+use crate::debug;
+
 pub struct Clock {
   bpm: u16
 }
@@ -18,12 +20,13 @@ static CLOCK_DIVISIONS: AtomicU32 = AtomicU32::new(0);
 
 impl Clock {
   pub fn new(bpm: u16, running: bool) -> Clock {
-    // let mut clock = unsafe { &mut *CLOCK.as_mut_ptr() };
     let mut clock = Clock{ bpm: 1 };
     clock.set_bpm(bpm);
     clock.set_running(false);
     clock.set_running(running);
     clock.set_divisions([1,1,1]);
+
+    Timer2::set_handler(Clock::on_timer_tick);
     return clock;
   }
 
@@ -39,6 +42,8 @@ impl Clock {
     self.bpm = bpm;
     // sends 24 ticks for every quarternote
     let intervall_in_us : u32 = 60 * 1000 * 1000 / ((self.bpm as u32) * 24);
+    debug!("tim2 to");
+    debug!(intervall_in_us);
     Timer2::set_interval(intervall_in_us);
   }
 

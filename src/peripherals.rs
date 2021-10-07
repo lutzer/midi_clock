@@ -61,8 +61,8 @@ impl Peripherals {
     let clocks = rcc.cfgr
       .use_hse(8.mhz()) // set clock frequency to external 8mhz oscillator
       .sysclk(72.mhz()) // set sysclock 
-      .pclk1(36.mhz()) // clock for apb1 prescaler -> TIM1
-      .pclk2(36.mhz()) // clock for apb2 prescaler -> TIM2,3,4
+      .pclk1(1.mhz()) // clock for apb1 prescaler -> TIM1
+      .pclk2(1.mhz()) // clock for apb2 prescaler -> TIM2,3,4
       .adcclk(12.mhz()) // clock for analog digital converters
       .freeze(&mut flash.acr);
 
@@ -176,7 +176,7 @@ impl Peripherals {
       usart2,
       (tx, rx),
       &mut afio.mapr,
-      Config::default().baudrate( if cfg!(feature="clock_test") { 38400.bps()} else { 31250.bps() }),
+      Config::default().baudrate( if cfg!(feature="clock_test") { 38400.bps() } else { 31250.bps() }),
       *clocks,
       apb1,
     );

@@ -16,7 +16,7 @@ mod buttons;
 use buttons::*;
 
 mod timers;
-use timers::*;
+use timers::{Timer3};
 
 mod debug;
 
@@ -138,7 +138,6 @@ fn main() -> ! {
 
   let mut clock = Clock::new(initial_state.bpm, initial_state.running == RunState::RUNNING);
   clock.on_tick(on_clock_tick);
-  Timer2::set_handler(Clock::on_timer_tick);
   
   let encoder = Encoder::new();
 
@@ -172,9 +171,9 @@ fn main() -> ! {
       on_state_change(&state, &mut clock, &mut display);
     });
     display.on_update().map(|_| {
-      // interrupt::free(|cs| {
-      //   display.flush(cs);
-      // });
+      interrupt::free(|cs| {
+        display.flush(cs);
+      });
     });
     
   }

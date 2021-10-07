@@ -68,8 +68,8 @@ fn TIM2() {
     TIMER_2_HANDLER.get(cs).map(|f| f(cs) );
     let mut tim2 = G_TIM2.borrow(cs).borrow_mut();
     tim2.as_mut().map(|t| {
-      t.reset();
       t.clear_update_interrupt_flag();
+      t.reset();
     });
   });
 }

@@ -9,7 +9,7 @@ macro_rules! debug {
 #[cfg(feature = "debug")] 
 pub mod debug_methods {
   use crate::{CONTEXT};
-  use crate::utils::{u16_to_string, i16_to_string};
+  use crate::utils::{u16_to_string, i16_to_string, u32_to_string};
   use crate::statemachine::State;
 
   pub trait Stringable<'a> {
@@ -25,6 +25,13 @@ pub mod debug_methods {
   impl<'a> Stringable<'a> for u16 {
     fn into_string(self) -> &'a str {
       let s = u16_to_string(self);
+      return s
+    }
+  }
+
+  impl<'a> Stringable<'a> for u32 {
+    fn into_string(self) -> &'a str {
+      let s = u32_to_string(self);
       return s
     }
   }
