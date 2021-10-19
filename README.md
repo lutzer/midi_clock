@@ -26,7 +26,9 @@
 
 ## Debugging
 
+* flash chip with debug feature: `./flash debug`
 * see debugging output with `screen /dev/tty.<adapter> 115200`, (Ctrl+A, K to close monitor)
+* for analyzing the timings of the midi clock see [tools/clock_test/README.md](tools/clock_test/README.md)
 
 ## Links
 

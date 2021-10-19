@@ -1,11 +1,19 @@
+#!/bin/sh
+
 INPUT_FILE_ELIF="target/thumbv7m-none-eabi/release/midi_clock"
 OUTPUT_FILE_BIN="target/midi_clock.bin"
 FLASH_ADDRESS="0x08000000"
 
 set -e # stop on error
 
-echo "Compiling program..."
-cargo build --release
+if (($# > 0)) 
+then
+  echo "Compiling program with features: $1 ..."
+  cargo build --release --features $1
+else
+  echo "Compiling program without features..."
+  cargo build --release
+fi
 echo "Copying elif to bin."
 rm -f $OUTPUT_FILE_BIN
 arm-none-eabi-objcopy -O binary $INPUT_FILE_ELIF $OUTPUT_FILE_BIN
