@@ -4,8 +4,6 @@ use cortex_m::interrupt;
 
 use crate::utils::{CSCell};
 
-use crate::debug;
-
 pub struct Clock {
   bpm: u16
 }
@@ -42,8 +40,6 @@ impl Clock {
     self.bpm = bpm;
     // sends 24 ticks for every quarternote
     let intervall_in_us : u32 = 60 * 1000 * 1000 / ((self.bpm as u32) * 24);
-    debug!("tim2 to");
-    debug!(intervall_in_us);
     Timer2::set_interval(intervall_in_us);
   }
 

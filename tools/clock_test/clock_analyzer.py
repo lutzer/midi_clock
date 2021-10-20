@@ -17,6 +17,8 @@ def read_serial():
 
   with pyserial.Serial(SERIAL_PORT, BAUDRATE) as serial:
 
+    print ("connected")
+
     last_reading = 0
     buffer_index = 0
 
@@ -35,6 +37,7 @@ producer = threading.Thread(target=read_serial)
 producer.start()
 
 # main thread is the consumer that calculates the running average and prints it
+time.sleep(2.0)
 while True:
   time_diffs = [0]
   with buffer_mutex:
@@ -47,7 +50,7 @@ while True:
     print("mean in us:   ", int(mean))
     print("std dev:      ", dev)
     print("freq:         ", 1000000/mean)
-    print("bpm:          ", int(60000000/(mean*24)))
+    print("bpm:          ", 60000000/(mean*24))
   time.sleep(0.5)
     
 

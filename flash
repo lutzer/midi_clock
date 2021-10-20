@@ -8,15 +8,15 @@ set -e # stop on error
 
 if (($# > 0)) 
 then
-  echo "Compiling program with features: $1 ..."
+  echo "Compiling program with features: $1."
   cargo build --release --features $1
 else
-  echo "Compiling program without features..."
+  echo "Compiling program with standard features."
   cargo build --release
 fi
 echo "Copying elif to bin."
 rm -f $OUTPUT_FILE_BIN
 arm-none-eabi-objcopy -O binary $INPUT_FILE_ELIF $OUTPUT_FILE_BIN
-echo "Writing programm to chip..."
+echo "Writing programm to chip."
 st-flash write $OUTPUT_FILE_BIN $FLASH_ADDRESS
 echo "All done."

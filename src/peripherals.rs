@@ -61,8 +61,8 @@ impl Peripherals {
     let clocks = rcc.cfgr
       .use_hse(8.mhz()) // set clock frequency to external 8mhz oscillator
       .sysclk(72.mhz()) // set sysclock 
-      .pclk1(1.mhz()) // clock for apb1 prescaler -> TIM1
-      .pclk2(1.mhz()) // clock for apb2 prescaler -> TIM2,3,4
+      .pclk1(8.mhz()) // clock for apb1 prescaler -> TIM1
+      .pclk2(8.mhz()) // clock for apb2 prescaler -> TIM2,3,4
       .adcclk(12.mhz()) // clock for analog digital converters
       .freeze(&mut flash.acr);
 

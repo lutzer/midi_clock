@@ -18,14 +18,15 @@
 * disconnect external power supply
 * connect programmer *ST-Link V2* to programming pins of blue pill. Connect pins *SWDIO, GND, SWCLK, and 3.3V and RST to pin R*
 * check if programmer is avalaible with `st-info --probe`
-* for debugging connect seria adapter, see in [docs/hardware.md](docs/hardware.md)
 
 ## Flash Chip
 
 * run `./flash`
+* compile with features with `./flash "feature1,feature2,..."`
 
 ## Debugging
 
+* for debugging connect serial adapter, see in [docs/hardware.md](docs/hardware.md)
 * flash chip with debug feature: `./flash debug`
 * see debugging output with `screen /dev/tty.<adapter> 115200`, (Ctrl+A, K to close monitor)
 * for analyzing the timings of the midi clock see [tools/clock_test/README.md](tools/clock_test/README.md)
@@ -35,3 +36,4 @@
 * Midi specifications: https://www.midi.org/specifications-old/item/table-1-summary-of-midi-message
 * STM32f103 Reference Manual: https://www.st.com//content/ccc/resource/technical/document/reference_manual/59/b9/ba/7f/11/af/43/d5/CD00171190.pdf/files/CD00171190.pdf/jcr:content/translations/en.CD00171190.pdf
 * LCD 0802A: http://www.farnell.com/datasheets/50552.pdf
+* Timer registers for stm32f103: https://docs.rs/stm32f1/0.14.0/stm32f1/stm32f103/tim2/index.html

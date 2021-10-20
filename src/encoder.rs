@@ -77,7 +77,7 @@ impl Encoder {
     enc_pin1.enable_interrupt(exti);
     cortex_m::interrupt::free(|cs| ENCODER_PIN1.borrow(cs).replace(Some(enc_pin1)));
 
-    // enable interrupt for pin pb0
+    // enable interrupt for pin pa1
     let mut enc_pin2 = pa1.into_pull_up_input(crl);
     enc_pin2.make_interrupt_source(afio);
     enc_pin2.trigger_on_edge(exti, Edge::RISING_FALLING);
