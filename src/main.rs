@@ -111,13 +111,17 @@ fn send_midi_ctrl_msg(current: RunState, _: RunState) {
   });
 }
 
-fn on_clock_tick(_clock: u8, big_tick: bool, cs: &CriticalSection) {
+fn on_clock_tick(triggers: u8, midi_outs: [bool;2], cs: &CriticalSection) {
   let mut context = CONTEXT.borrow(cs).borrow_mut();
   context.as_mut().map(|ctx| {
-    ctx.serial.write(2, MidiMessage::TimingClock as u8).ok();
-    if big_tick {
-      ctx.triggers.fire(TriggerMask::Trigger1 as u8 | TriggerMask::Trigger2 as u8 | TriggerMask::Trigger3 as u8 | TriggerMask::Trigger4 as u8);
+    if midi_outs[0] {
+      ctx.serial.write(2, MidiMessage::TimingClock as u8).ok();
     }
+    if midi_outs[1] {
+      ctx.serial.write(3, MidiMessage::TimingClock as u8).ok();
+    }
+    ctx.triggers.fire(triggers);
+
   });
 }
 
@@ -134,7 +138,10 @@ fn main() -> ! {
     peripherals.button3.unwrap(), peripherals.button4.unwrap());
   Timer3::add_handler(0, Buttons::on_timer_tick);
 
-  let mut clock = Clock::new(initial_state.bpm, initial_state.running == RunState::RUNNING);
+  let mut clock = Clock::new(
+    initial_state.bpm,
+    initial_state.running == RunState::RUNNING,
+    initial_state.clock_divisions);
   clock.on_tick(on_clock_tick);
   
   let encoder = Encoder::new();

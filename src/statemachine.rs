@@ -29,7 +29,7 @@ impl Statemachine {
     return Statemachine { 
       state : State {
         bpm: 120,
-        clock_divisions: [1,2,1,1],
+        clock_divisions: [1,4,3,32],
         running: RunState::RUNNING
       },
       changed: true
