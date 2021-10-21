@@ -12,8 +12,9 @@ use crate::timers::{Timer2};
 
 type ClockTickHandler = fn(u8, bool, &CriticalSection);
 
-static CLOCK_TICK_HANDLER : CSCell<Option<ClockTickHandler>> = CSCell::new(None);
+const BIG_STEP_NUMBER: u16 = 24;
 
+static CLOCK_TICK_HANDLER: CSCell<Option<ClockTickHandler>> = CSCell::new(None);
 static CLOCK_DIVISIONS: AtomicU32 = AtomicU32::new(0);
 
 impl Clock {
@@ -59,9 +60,15 @@ impl Clock {
   pub fn on_timer_tick(cs : &CriticalSection) {
     static mut OVERFLOWS : u16 = 0;
 
+    let divisions = CLOCK_DIVISIONS.load(Ordering::Relaxed);
+
+    // for i in [0..3] {
+
+    // }
+
     unsafe {
-      CLOCK_TICK_HANDLER.get(cs).map(|f| f(0, OVERFLOWS == 0, cs) ); 
-      OVERFLOWS = (OVERFLOWS + 1) % 24; // send a big step every 24 steps
+      CLOCK_TICK_HANDLER.get(cs).map(|f| f(0, OVERFLOWS % 24 == 0, cs) ); 
+      OVERFLOWS += 1; // send a big step every 24 steps
     }
   }
 }

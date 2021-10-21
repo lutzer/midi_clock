@@ -19,7 +19,10 @@ use stm32f1xx_hal::pac::{USART1, USART2};
 pub use embedded_hal::digital::v2::{OutputPin, InputPin};
 
 // types for Initialized peripherals
-pub type Led1Gpio = gpio::gpioc::PC13<gpio::Output<gpio::PushPull>>;
+pub type Led1Gpio = gpio::gpiob::PB5<gpio::Output<gpio::PushPull>>;
+pub type Led2Gpio = gpio::gpiob::PB4<gpio::Output<gpio::PushPull>>;
+pub type Trigger1Gpio = gpio::gpiob::PB0<gpio::Output<gpio::PushPull>>;
+pub type Trigger2Gpio = gpio::gpiob::PB1<gpio::Output<gpio::PushPull>>;
 
 pub type Button1Gpio = gpio::gpiob::PB12<gpio::Input<gpio::PullUp>>;
 pub type Button2Gpio = gpio::gpiob::PB13<gpio::Input<gpio::PullUp>>;
@@ -40,7 +43,10 @@ pub type Usart2Serial = Serial<
 
 // holds all peripherals
 pub struct Peripherals {
-  pub led: Option<Led1Gpio>,
+  pub led1: Option<Led1Gpio>,
+  pub led2: Option<Led2Gpio>,
+  pub trigger1: Option<Trigger1Gpio>,
+  pub trigger2: Option<Trigger2Gpio>,
   pub button1: Option<Button1Gpio>,
   pub button2: Option<Button2Gpio>,
   pub button3: Option<Button3Gpio>,
@@ -74,6 +80,8 @@ impl Peripherals {
     let mut gpioc = dp.GPIOC.split(&mut apb2);
     let mut afio = dp.AFIO.constrain(&mut apb2);
 
+    // disable jtag debugging on pa15,pb3,pb4
+    let (pa15, pb3, pb4) = afio.mapr.disable_jtag(gpioa.pa15, gpiob.pb3, gpiob.pb4);
 
     // init timers
     Timer2::init(dp.TIM2, &clocks, &mut apb1);
@@ -82,8 +90,13 @@ impl Peripherals {
     // init encoder interrupts
     Encoder::init(&dp.EXTI, gpioa.pa0, gpioa.pa1, &mut gpioa.crl, &mut afio );
 
+    // let led2 = Peripherals::init_led2(gpiob.pb4, &mut gpiob.crl);
+
     return Peripherals {
-      led: Peripherals::init_led(gpioc.pc13, &mut gpioc.crh),
+      led1: Peripherals::init_led1(gpiob.pb5, &mut gpiob.crl),
+      led2: Peripherals::init_led2(pb4, &mut gpiob.crl),
+      trigger1: Peripherals::init_trigger1(gpiob.pb0, &mut gpiob.crl),
+      trigger2: Peripherals::init_trigger2(gpiob.pb1, &mut gpiob.crl),
 
       button1: Peripherals::init_button1(gpiob.pb12, &mut gpiob.crh),
       button2: Peripherals::init_button2(gpiob.pb13, &mut gpiob.crh),
@@ -96,13 +109,40 @@ impl Peripherals {
     };
   }
 
-  fn init_led(
-    pc13: gpio::gpioc::PC13<gpio::Input<gpio::Floating>>, 
-    crh: &mut gpio::gpioc::CRH
+  fn init_led1(
+    pb5: gpio::gpiob::PB5<gpio::Input<gpio::Floating>>, 
+    crl: &mut gpio::gpiob::CRL
   ) -> Option<Led1Gpio> {
-    let mut led = pc13.into_push_pull_output(crh);
-    led.set_high().ok();
+    let mut led = pb5.into_push_pull_output(crl);
+    led.set_low().ok();
     return Some(led);
+  }
+
+  fn init_led2(
+    pb4: gpio::gpiob::PB4<gpio::Input<gpio::Floating>>, 
+    crl: &mut gpio::gpiob::CRL
+  ) -> Option<Led2Gpio> {
+    let mut led = pb4.into_push_pull_output(crl);
+    led.set_low().ok();
+    return Some(led);
+  }
+
+  fn init_trigger1(
+    pb0: gpio::gpiob::PB0<gpio::Input<gpio::Floating>>, 
+    crl: &mut gpio::gpiob::CRL
+  ) -> Option<Trigger1Gpio> {
+    let mut trigger = pb0.into_push_pull_output(crl);
+    trigger.set_low().ok();
+    return Some(trigger);
+  }
+
+  fn init_trigger2(
+    pb1: gpio::gpiob::PB1<gpio::Input<gpio::Floating>>, 
+    crl: &mut gpio::gpiob::CRL
+  ) -> Option<Trigger2Gpio> {
+    let mut trigger = pb1.into_push_pull_output(crl);
+    trigger.set_low().ok();
+    return Some(trigger);
   }
 
   fn init_button1(

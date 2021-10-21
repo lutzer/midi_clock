@@ -13,6 +13,7 @@ clock_test = []
 [profile.release]
 opt-level = 'z' # turn on maximum optimizations. We only have 64kB
 lto = true      # Link-time-optimizations for further size reduction
+debug = false
 
 [dependencies]
 alloc-cortex-m = "0.4.1"

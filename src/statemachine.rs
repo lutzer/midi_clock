@@ -10,7 +10,7 @@ pub enum RunState {
 #[derive(Copy, Clone)]
 pub struct State {
   pub bpm: u16,
-  pub clock_divisions: [u8; 4],
+  pub clock_divisions: [u8; 4], //0: midi out1+2, 1: midi out 2+3, 2: trigger1, 3: trigger2
   pub running: RunState
 }
 
@@ -29,7 +29,7 @@ impl Statemachine {
     return Statemachine { 
       state : State {
         bpm: 120,
-        clock_divisions: [1,1,1,1],
+        clock_divisions: [1,2,1,1],
         running: RunState::RUNNING
       },
       changed: true

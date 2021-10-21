@@ -7,13 +7,13 @@ use cortex_m::interrupt;
 use cortex_m::interrupt::{CriticalSection};
 
 mod peripherals;
-use peripherals::*;
+use peripherals::{Peripherals};
 
 mod serial;
-use serial::*;
+use serial::{SerialWriter};
 
 mod buttons;
-use buttons::*;
+use buttons::{Buttons, BUTTON1_MASK, BUTTON2_MASK, BUTTON3_MASK, BUTTON4_MASK};
 
 mod timers;
 use timers::{Timer3};
@@ -23,25 +23,25 @@ mod debug;
 mod utils;
 
 mod encoder;
-use encoder::*;
+use encoder::{Encoder};
 
 mod clock;
-use clock::*;
+use clock::{Clock};
 
 mod triggers;
-use triggers::*;
+use triggers::{Triggers, TriggerMask};
 
 mod statemachine;
-use statemachine::*;
+use statemachine::{Statemachine, State, RunState};
 
 mod context;
-use context::*;
+use context::{Context, CSContext, CS_CONTEXT_INIT};
 
 mod display;
-use display::*;
+use display::{Display};
 
 mod midi;
-use midi::*;
+use midi::{MidiMessage};
 
 // When a panic occurs, stop the microcontroller
 #[allow(unused_imports)]
@@ -51,7 +51,6 @@ use panic_halt;
 pub static CONTEXT: CSContext = CS_CONTEXT_INIT;
 
 fn on_button_press(statemachine: &mut Statemachine, changes: u8, state: u8) {
-  debug!("button changed");
   if (changes & BUTTON1_MASK) > 0 {
     statemachine.button1_pressed(changes & BUTTON1_MASK & state > 0);
   }
@@ -67,7 +66,6 @@ fn on_button_press(statemachine: &mut Statemachine, changes: u8, state: u8) {
 }
 
 fn on_encoder_change(statemachine: &mut Statemachine, rotation: i16) {
-  debug!("encoder turn");
   statemachine.encoder_turn(rotation);
 }
 
@@ -118,7 +116,7 @@ fn on_clock_tick(_clock: u8, big_tick: bool, cs: &CriticalSection) {
   context.as_mut().map(|ctx| {
     ctx.serial.write(2, MidiMessage::TimingClock as u8).ok();
     if big_tick {
-      ctx.triggers.fire()
+      ctx.triggers.fire(TriggerMask::Trigger1 as u8 | TriggerMask::Trigger2 as u8 | TriggerMask::Trigger3 as u8 | TriggerMask::Trigger4 as u8);
     }
   });
 }
@@ -147,7 +145,12 @@ fn main() -> ! {
 
   // create global context to share peripherals among interrupts
   {
-    let triggers = Triggers::new(peripherals.led.unwrap());
+    let triggers = Triggers::new(
+      peripherals.led1.unwrap(), 
+      peripherals.led2.unwrap(),
+      peripherals.trigger1.unwrap(),
+      peripherals.trigger2.unwrap()
+    );
     Timer3::add_handler(2, Triggers::on_timer_tick);
     let serial = SerialWriter::new(peripherals.usart1.unwrap(), peripherals.usart2.unwrap());
     

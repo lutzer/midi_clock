@@ -30,8 +30,6 @@ impl Timer2  {
 
     cortex_m::interrupt::free(|cs| G_TIM2.borrow(cs).replace(Some(timer)));
 
-    // tim2.as_mut().unwrap().start(10.khz())
-
     cortex_m::peripheral::NVIC::unpend(Interrupt::TIM2);
     unsafe {
       cortex_m::peripheral::NVIC::unmask(Interrupt::TIM2);
@@ -105,7 +103,7 @@ pub struct Timer3;
 impl Timer3 {
   pub fn init(tim3: TIM3, clocks: &stm32f1xx_hal::rcc::Clocks, apb1: &mut stm32f1xx_hal::rcc::APB1) {
     
-    // set timer2 to 100khz = 10us
+    // set timer3 to 1khz = 1ms
     let mut timer = Timer::tim3(tim3, &clocks, apb1).start_count_down(1000.hz());
     
     timer.listen(Event::Update);
