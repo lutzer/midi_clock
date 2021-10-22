@@ -1,4 +1,4 @@
-use crate::peripherals::{Led1Gpio, Led2Gpio, Trigger1Gpio, Trigger2Gpio};
+use crate::peripherals::{Trigger1Gpio, Trigger2Gpio, Trigger3Gpio, Trigger4Gpio};
 
 pub use embedded_hal::digital::v2::{OutputPin, InputPin};
 use cortex_m::interrupt;
@@ -20,18 +20,18 @@ const TIMER_OVERFLOW_COUNT: u8 = 20;
 static TRIGGERS_STARTED: AtomicU8 = AtomicU8::new(0);
 
 pub struct Triggers {
-  trigger1: Led1Gpio,
-  trigger2: Led2Gpio,
-  trigger3: Trigger1Gpio,
-  trigger4: Trigger2Gpio
+  trigger1: Trigger1Gpio, 
+  trigger2: Trigger2Gpio, 
+  trigger3: Trigger3Gpio, 
+  trigger4: Trigger4Gpio
 }
 
 impl Triggers {
   pub fn new(
-    trigger1: Led1Gpio, 
-    trigger2: Led2Gpio, 
-    trigger3: Trigger1Gpio, 
-    trigger4: Trigger2Gpio
+    trigger1: Trigger1Gpio, 
+    trigger2: Trigger2Gpio, 
+    trigger3: Trigger3Gpio, 
+    trigger4: Trigger4Gpio
   ) -> Triggers {
     return Triggers { 
       trigger1: trigger1, 

@@ -29,7 +29,7 @@ mod clock;
 use clock::{Clock};
 
 mod triggers;
-use triggers::{Triggers, TriggerMask};
+use triggers::{Triggers};
 
 mod statemachine;
 use statemachine::{Statemachine, State, RunState};
@@ -86,11 +86,9 @@ fn on_state_change(state: &State, clock: &mut Clock, display: &mut Display) {
       clock.set_bpm(state.bpm);
       display.update(state);
     }
-  } else {
-    // set initial state
-    clock.set_running(state.running == RunState::RUNNING);
-    clock.set_bpm(state.bpm);
-    display.update(state);
+    if prev_state.trigger_clock_multiplier != state.trigger_clock_multiplier {
+      clock.set_trigger_multiplier(state.trigger_clock_multiplier);
+    }
   }
 
   unsafe { PREV_STATE = Some(*state) }
@@ -114,12 +112,14 @@ fn send_midi_ctrl_msg(current: RunState, _: RunState) {
 fn on_clock_tick(triggers: u8, midi_outs: [bool;2], cs: &CriticalSection) {
   let mut context = CONTEXT.borrow(cs).borrow_mut();
   context.as_mut().map(|ctx| {
+    // send midi ticks
     if midi_outs[0] {
       ctx.serial.write(2, MidiMessage::TimingClock as u8).ok();
     }
     if midi_outs[1] {
       ctx.serial.write(3, MidiMessage::TimingClock as u8).ok();
     }
+    // send triggers
     ctx.triggers.fire(triggers);
 
   });
@@ -138,10 +138,7 @@ fn main() -> ! {
     peripherals.button3.unwrap(), peripherals.button4.unwrap());
   Timer3::add_handler(0, Buttons::on_timer_tick);
 
-  let mut clock = Clock::new(
-    initial_state.bpm,
-    initial_state.running == RunState::RUNNING,
-    initial_state.clock_divisions);
+  let mut clock = Clock::new(&initial_state);
   clock.on_tick(on_clock_tick);
   
   let encoder = Encoder::new();
@@ -153,10 +150,10 @@ fn main() -> ! {
   // create global context to share peripherals among interrupts
   {
     let triggers = Triggers::new(
-      peripherals.led1.unwrap(), 
-      peripherals.led2.unwrap(),
-      peripherals.trigger1.unwrap(),
-      peripherals.trigger2.unwrap()
+      peripherals.trigger1.unwrap(), 
+      peripherals.trigger2.unwrap(),
+      peripherals.trigger3.unwrap(),
+      peripherals.trigger4.unwrap()
     );
     Timer3::add_handler(2, Triggers::on_timer_tick);
     let serial = SerialWriter::new(peripherals.usart1.unwrap(), peripherals.usart2.unwrap());
@@ -166,6 +163,8 @@ fn main() -> ! {
       CONTEXT.borrow(cs).replace(Some(context));
     });
   }
+
+  display.update(&initial_state);
 
   debug!("start");
   

@@ -19,10 +19,10 @@ use stm32f1xx_hal::pac::{USART1, USART2};
 pub use embedded_hal::digital::v2::{OutputPin, InputPin};
 
 // types for Initialized peripherals
-pub type Led1Gpio = gpio::gpiob::PB5<gpio::Output<gpio::PushPull>>;
-pub type Led2Gpio = gpio::gpiob::PB4<gpio::Output<gpio::PushPull>>;
-pub type Trigger1Gpio = gpio::gpiob::PB0<gpio::Output<gpio::PushPull>>;
-pub type Trigger2Gpio = gpio::gpiob::PB1<gpio::Output<gpio::PushPull>>;
+pub type Trigger1Gpio = gpio::gpiob::PB5<gpio::Output<gpio::PushPull>>;
+pub type Trigger2Gpio = gpio::gpiob::PB4<gpio::Output<gpio::PushPull>>;
+pub type Trigger3Gpio = gpio::gpiob::PB0<gpio::Output<gpio::PushPull>>;
+pub type Trigger4Gpio = gpio::gpiob::PB1<gpio::Output<gpio::PushPull>>;
 
 pub type Button1Gpio = gpio::gpiob::PB12<gpio::Input<gpio::PullUp>>;
 pub type Button2Gpio = gpio::gpiob::PB13<gpio::Input<gpio::PullUp>>;
@@ -43,10 +43,10 @@ pub type Usart2Serial = Serial<
 
 // holds all peripherals
 pub struct Peripherals {
-  pub led1: Option<Led1Gpio>,
-  pub led2: Option<Led2Gpio>,
   pub trigger1: Option<Trigger1Gpio>,
   pub trigger2: Option<Trigger2Gpio>,
+  pub trigger3: Option<Trigger3Gpio>,
+  pub trigger4: Option<Trigger4Gpio>,
   pub button1: Option<Button1Gpio>,
   pub button2: Option<Button2Gpio>,
   pub button3: Option<Button3Gpio>,
@@ -93,10 +93,10 @@ impl Peripherals {
     // let led2 = Peripherals::init_led2(gpiob.pb4, &mut gpiob.crl);
 
     return Peripherals {
-      led1: Peripherals::init_led1(gpiob.pb5, &mut gpiob.crl),
-      led2: Peripherals::init_led2(pb4, &mut gpiob.crl),
-      trigger1: Peripherals::init_trigger1(gpiob.pb0, &mut gpiob.crl),
-      trigger2: Peripherals::init_trigger2(gpiob.pb1, &mut gpiob.crl),
+      trigger1: Peripherals::init_trigger1(gpiob.pb5, &mut gpiob.crl),
+      trigger2: Peripherals::init_trigger2(pb4, &mut gpiob.crl),
+      trigger3: Peripherals::init_trigger3(gpiob.pb0, &mut gpiob.crl),
+      trigger4: Peripherals::init_trigger4(gpiob.pb1, &mut gpiob.crl),
 
       button1: Peripherals::init_button1(gpiob.pb12, &mut gpiob.crh),
       button2: Peripherals::init_button2(gpiob.pb13, &mut gpiob.crh),
@@ -109,37 +109,37 @@ impl Peripherals {
     };
   }
 
-  fn init_led1(
+  fn init_trigger1(
     pb5: gpio::gpiob::PB5<gpio::Input<gpio::Floating>>, 
     crl: &mut gpio::gpiob::CRL
-  ) -> Option<Led1Gpio> {
-    let mut led = pb5.into_push_pull_output(crl);
-    led.set_low().ok();
-    return Some(led);
-  }
-
-  fn init_led2(
-    pb4: gpio::gpiob::PB4<gpio::Input<gpio::Floating>>, 
-    crl: &mut gpio::gpiob::CRL
-  ) -> Option<Led2Gpio> {
-    let mut led = pb4.into_push_pull_output(crl);
-    led.set_low().ok();
-    return Some(led);
-  }
-
-  fn init_trigger1(
-    pb0: gpio::gpiob::PB0<gpio::Input<gpio::Floating>>, 
-    crl: &mut gpio::gpiob::CRL
   ) -> Option<Trigger1Gpio> {
-    let mut trigger = pb0.into_push_pull_output(crl);
+    let mut trigger = pb5.into_push_pull_output(crl);
     trigger.set_low().ok();
     return Some(trigger);
   }
 
   fn init_trigger2(
-    pb1: gpio::gpiob::PB1<gpio::Input<gpio::Floating>>, 
+    pb4: gpio::gpiob::PB4<gpio::Input<gpio::Floating>>, 
     crl: &mut gpio::gpiob::CRL
   ) -> Option<Trigger2Gpio> {
+    let mut trigger = pb4.into_push_pull_output(crl);
+    trigger.set_low().ok();
+    return Some(trigger);
+  }
+
+  fn init_trigger3(
+    pb0: gpio::gpiob::PB0<gpio::Input<gpio::Floating>>, 
+    crl: &mut gpio::gpiob::CRL
+  ) -> Option<Trigger3Gpio> {
+    let mut trigger = pb0.into_push_pull_output(crl);
+    trigger.set_low().ok();
+    return Some(trigger);
+  }
+
+  fn init_trigger4(
+    pb1: gpio::gpiob::PB1<gpio::Input<gpio::Floating>>, 
+    crl: &mut gpio::gpiob::CRL
+  ) -> Option<Trigger4Gpio> {
     let mut trigger = pb1.into_push_pull_output(crl);
     trigger.set_low().ok();
     return Some(trigger);
