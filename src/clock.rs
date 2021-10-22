@@ -87,7 +87,7 @@ impl Clock {
 
     // handle the trigger out
     if unsafe { OVERFLOWS % trigger_ticks_per_quarternote == 0 } {
-      triggers |= 1 << 3;
+      triggers |= 1 << 2;
     }
 
     unsafe {

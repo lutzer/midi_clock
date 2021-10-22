@@ -11,6 +11,7 @@ pub mod debug_methods {
   use crate::{CONTEXT};
   use crate::utils::{u16_to_string, i16_to_string, u32_to_string};
   use crate::statemachine::State;
+  use core::str;
 
   pub trait Stringable<'a> {
     fn into_string(self) -> &'a str;
@@ -46,6 +47,32 @@ pub mod debug_methods {
   impl<'a> Stringable<'a> for bool {
     fn into_string(self) -> &'a str {
       return if self { "1" } else { "0" }
+    }
+  }
+
+  impl<'a> Stringable<'a> for State {
+    fn into_string(self) -> &'a str {
+      const BUFFER_LENGTH: usize = 16;
+      static mut buffer: [u8;BUFFER_LENGTH] = [0; BUFFER_LENGTH];
+
+      unsafe fn add_number(val: u16, i: &mut usize){
+        let string = u16_to_string(val);
+        buffer[*i..*i+string.len()].copy_from_slice(string.as_bytes());
+        *i += string.len();
+      }
+
+      unsafe {
+        let mut i = 0;
+        add_number(self.bpm, &mut i);
+        buffer[i] = ',' as u8; i += 1;
+        add_number(self.running as u16, &mut i);
+        buffer[i] = ',' as u8; i += 1;
+        add_number(self.trigger_clock_multiplier as u16, &mut i);
+        for i in i..BUFFER_LENGTH {
+          buffer[i] = ' ' as u8;
+        }
+        return str::from_utf8_unchecked(&buffer);
+      }
     }
   }
 

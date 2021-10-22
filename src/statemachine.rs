@@ -31,8 +31,8 @@ impl Statemachine {
     // set initial state
     return Statemachine { 
       state : State {
-        bpm: 320,
-        trigger_clock_multiplier: 24,
+        bpm: 120,
+        trigger_clock_multiplier: 4,
         clock_divisions: [1,4],
         running: RunState::RUNNING
       },

@@ -29,7 +29,7 @@ mod clock;
 use clock::{Clock};
 
 mod triggers;
-use triggers::{Triggers};
+use triggers::{Triggers, TRIGGER4_MASK};
 
 mod statemachine;
 use statemachine::{Statemachine, State, RunState};
@@ -73,8 +73,7 @@ fn on_state_change(state: &State, clock: &mut Clock, display: &mut Display) {
   static mut PREV_STATE : Option<State> = None;
 
   debug!("state change");
-  debug!(state.running as u16);
-  debug!(state.bpm);
+  debug!(*state);
 
   if let Some(prev_state) = unsafe { PREV_STATE } {
     // check for state changes
@@ -102,7 +101,10 @@ fn send_midi_ctrl_msg(current: RunState, _: RunState) {
         RunState::RUNNING => ctx.serial.write(2, MidiMessage::Continue as u8).ok(),
         RunState::PAUSED => ctx.serial.write(2, MidiMessage::Stop as u8).ok(),
         RunState::STOPPED => ctx.serial.write(2, MidiMessage::Stop as u8).ok(),
-        RunState::RESTART => ctx.serial.write(2, MidiMessage::Start as u8).ok(),
+        RunState::RESTART => { 
+          ctx.triggers.fire(TRIGGER4_MASK);
+          ctx.serial.write(2, MidiMessage::Start as u8).ok()
+        }
         _ => None
       }
     });
@@ -112,16 +114,13 @@ fn send_midi_ctrl_msg(current: RunState, _: RunState) {
 fn on_clock_tick(trigger_ticks: u8, midi_tick: [bool;2], cs: &CriticalSection) {
   let mut context = CONTEXT.borrow(cs).borrow_mut();
   context.as_mut().map(|ctx| {
-    // send midi ticks
     if midi_tick[0] {
       ctx.serial.write(2, MidiMessage::TimingClock as u8).ok();
     }
     if midi_tick[1] {
       ctx.serial.write(3, MidiMessage::TimingClock as u8).ok();
     }
-    // send triggers
     ctx.triggers.fire(trigger_ticks);
-
   });
 }
 
