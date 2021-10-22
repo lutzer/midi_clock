@@ -1,21 +1,19 @@
 use crate::peripherals::{Trigger1Gpio, Trigger2Gpio, Trigger3Gpio, Trigger4Gpio};
 
-pub use embedded_hal::digital::v2::{OutputPin, InputPin};
+use embedded_hal::digital::v2::{OutputPin};
 use cortex_m::interrupt;
 use core::sync::atomic::{AtomicU8, Ordering};
 
 use crate::{CONTEXT};
 
-#[derive(Copy, Clone)]
-pub enum TriggerMask {
-  Trigger1 = 0b0001,
-  Trigger2 = 0b0010,
-  Trigger3 = 0b0100,
-  Trigger4 = 0b1000
-}
+// bitmasks for triggers
+pub const TRIGGER1_MASK : u8 = 0b00000001;
+pub const TRIGGER2_MASK : u8 = 0b00000010;
+pub const TRIGGER3_MASK : u8 = 0b00000100;
+pub const TRIGGER4_MASK : u8 = 0b00001000;
 
 // stop pulse after 50ms
-const TIMER_OVERFLOW_COUNT: u8 = 20;
+const TIMER_OVERFLOW_COUNT: u8 = 5;
 
 static TRIGGERS_STARTED: AtomicU8 = AtomicU8::new(0);
 
@@ -26,18 +24,18 @@ pub struct Triggers {
   trigger4: Trigger4Gpio
 }
 
-impl Triggers {
+impl Triggers  {
   pub fn new(
     trigger1: Trigger1Gpio, 
     trigger2: Trigger2Gpio, 
     trigger3: Trigger3Gpio, 
     trigger4: Trigger4Gpio
-  ) -> Triggers {
+  ) -> Triggers  {
     return Triggers { 
       trigger1: trigger1, 
       trigger2: trigger2,
       trigger3: trigger3,
-      trigger4: trigger4 
+      trigger4: trigger4,
     }
   }
 
@@ -47,16 +45,16 @@ impl Triggers {
 
   fn start_pulse(&mut self, triggers: u8) {
     TRIGGERS_STARTED.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |x| {
-      if (triggers & TriggerMask::Trigger1 as u8) > 0 {
+      if (triggers & TRIGGER1_MASK) > 0 {
         self.trigger1.set_high().ok();
       }
-      if (triggers & TriggerMask::Trigger2 as u8) > 0 {
+      if (triggers & TRIGGER2_MASK) > 0 {
         self.trigger2.set_high().ok();
       }
-      if (triggers & TriggerMask::Trigger3 as u8) > 0 {
+      if (triggers & TRIGGER3_MASK) > 0 {
         self.trigger3.set_high().ok();
       }
-      if (triggers & TriggerMask::Trigger4 as u8) > 0 {
+      if (triggers & TRIGGER4_MASK) > 0 {
         self.trigger4.set_high().ok();
       }
       return Some(x | triggers);
@@ -65,16 +63,16 @@ impl Triggers {
 
   fn stop_pulse(&mut self, triggers: u8) {
     TRIGGERS_STARTED.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |x| {
-      if (triggers & TriggerMask::Trigger1 as u8) > 0 {
+      if (triggers & TRIGGER1_MASK) > 0 {
         self.trigger1.set_low().ok();
       }
-      if (triggers & TriggerMask::Trigger2 as u8) > 0 {
+      if (triggers & TRIGGER2_MASK) > 0 {
         self.trigger2.set_low().ok();
       }
-      if (triggers & TriggerMask::Trigger3 as u8) > 0 {
+      if (triggers & TRIGGER3_MASK) > 0 {
         self.trigger3.set_low().ok();
       }
-      if (triggers & TriggerMask::Trigger4 as u8) > 0 {
+      if (triggers & TRIGGER4_MASK) > 0 {
         self.trigger4.set_low().ok();
       }
       return Some(x & !(triggers));
@@ -82,17 +80,14 @@ impl Triggers {
   }
 
   pub fn on_timer_tick() {
-    static mut OVERFLOWS1: u8 = 0;
-    static mut OVERFLOWS2: u8 = 0;
-    static mut OVERFLOWS3: u8 = 0;
-    static mut OVERFLOWS4: u8 = 0;
+    static mut OVERFLOWS: [u8;4] = [0,0,0,0];
 
     let triggers_started = TRIGGERS_STARTED.load(Ordering:: Relaxed);
     let mut triggers_ended: u8 = 0;
 
     // resets overflow is not started, else counts until TIMER_OVERFLOW_COUNT
     pub fn check_trigger(trigger_started: u8, overflows: &mut u8) -> u8  {
-      if (trigger_started) > 0 {
+      if trigger_started > 0 {
         if *overflows > TIMER_OVERFLOW_COUNT {
           return trigger_started;
         }
@@ -104,10 +99,10 @@ impl Triggers {
     }
 
     unsafe {
-      triggers_ended |= check_trigger(triggers_started & TriggerMask::Trigger1 as u8, &mut OVERFLOWS1);
-      triggers_ended |= check_trigger(triggers_started & TriggerMask::Trigger2 as u8, &mut OVERFLOWS2);
-      triggers_ended |= check_trigger(triggers_started & TriggerMask::Trigger3 as u8, &mut OVERFLOWS3);
-      triggers_ended |= check_trigger(triggers_started & TriggerMask::Trigger4 as u8, &mut OVERFLOWS4);
+      triggers_ended |= check_trigger(triggers_started & TRIGGER1_MASK, &mut OVERFLOWS[0]);
+      triggers_ended |= check_trigger(triggers_started & TRIGGER2_MASK, &mut OVERFLOWS[1]);
+      triggers_ended |= check_trigger(triggers_started & TRIGGER3_MASK, &mut OVERFLOWS[2]);
+      triggers_ended |= check_trigger(triggers_started & TRIGGER4_MASK, &mut OVERFLOWS[3]);
     }
 
     if triggers_ended > 0 {

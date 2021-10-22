@@ -10,5 +10,5 @@ pub struct Context {
   pub serial: SerialWriter
 }
 
-pub type CSContext = Mutex<RefCell<Option<Context>>>;
+pub type CSContext<'a> = Mutex<RefCell<Option<Context>>>;
 pub const CS_CONTEXT_INIT: CSContext = Mutex::new(RefCell::new(None));

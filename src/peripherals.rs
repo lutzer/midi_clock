@@ -81,7 +81,7 @@ impl Peripherals {
     let mut afio = dp.AFIO.constrain(&mut apb2);
 
     // disable jtag debugging on pa15,pb3,pb4
-    let (pa15, pb3, pb4) = afio.mapr.disable_jtag(gpioa.pa15, gpiob.pb3, gpiob.pb4);
+    let (_, _, gpiob_pb4) = afio.mapr.disable_jtag(gpioa.pa15, gpiob.pb3, gpiob.pb4);
 
     // init timers
     Timer2::init(dp.TIM2, &clocks, &mut apb1);
@@ -90,11 +90,9 @@ impl Peripherals {
     // init encoder interrupts
     Encoder::init(&dp.EXTI, gpioa.pa0, gpioa.pa1, &mut gpioa.crl, &mut afio );
 
-    // let led2 = Peripherals::init_led2(gpiob.pb4, &mut gpiob.crl);
-
     return Peripherals {
       trigger1: Peripherals::init_trigger1(gpiob.pb5, &mut gpiob.crl),
-      trigger2: Peripherals::init_trigger2(pb4, &mut gpiob.crl),
+      trigger2: Peripherals::init_trigger2(gpiob_pb4, &mut gpiob.crl),
       trigger3: Peripherals::init_trigger3(gpiob.pb0, &mut gpiob.crl),
       trigger4: Peripherals::init_trigger4(gpiob.pb1, &mut gpiob.crl),
 

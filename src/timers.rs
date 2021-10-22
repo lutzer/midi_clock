@@ -22,10 +22,12 @@ static TIMER_2_HANDLER: CSCell<Option<CSTimerHandler>> = CSCell::new(None);
 static G_TIM2: Mutex<RefCell<Option<CountDownTimer<TIM2>>>> = Mutex::new(RefCell::new(None));
 static TIMER2_OVERFLOWS: AtomicU32 = AtomicU32::new(1);
 
+/* Timer2 is used only to send trigger and midi tick messages to the clock */
 pub struct Timer2;
 impl Timer2  {
   pub fn init(tim2: TIM2, clocks: &stm32f1xx_hal::rcc::Clocks, apb1: &mut stm32f1xx_hal::rcc::APB1) {
 
+    // set timer 2 to 50us
     let timer = Timer::tim2(tim2, &clocks, apb1).start_count_down(50.us());
 
     cortex_m::interrupt::free(|cs| G_TIM2.borrow(cs).replace(Some(timer)));
@@ -99,6 +101,7 @@ unsafe fn TIM2() {
 static TIMER_3_HANDLERS: CSCell<[Option<TimerHandler>; MAX_TIM2_HANDLERS]> = CSCell::new([None; MAX_TIM2_HANDLERS]);
 static G_TIM3: Mutex<RefCell<Option<CountDownTimer<TIM3>>>> = Mutex::new(RefCell::new(None));
 
+/* Timer3 is used as a general purpose trigger for debouncing, pulse generation, etc */
 pub struct Timer3;
 impl Timer3 {
   pub fn init(tim3: TIM3, clocks: &stm32f1xx_hal::rcc::Clocks, apb1: &mut stm32f1xx_hal::rcc::APB1) {

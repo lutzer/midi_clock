@@ -1,4 +1,4 @@
-use core::sync::atomic::{AtomicU32, AtomicU8, Ordering};
+use core::sync::atomic::{AtomicU16, AtomicU8, Ordering};
 use cortex_m::interrupt::{ CriticalSection };
 use cortex_m::interrupt;
 
@@ -16,7 +16,7 @@ type ClockTickHandler = fn(u8, [bool;2], &CriticalSection);
 const CLOCK_TICKS_PER_QUARTER_NOTE: u32 = 24;
 
 static CLOCK_TICK_HANDLER: CSCell<Option<ClockTickHandler>> = CSCell::new(None);
-static CLOCK_DIVISIONS: AtomicU32 = AtomicU32::new(0);
+static CLOCK_DIVISIONS: AtomicU16 = AtomicU16::new(0);
 static TRIGGER_TICKS_PER_QUARTERNOTE: AtomicU8 = AtomicU8::new(0);
 
 impl Clock {
@@ -32,12 +32,10 @@ impl Clock {
     return clock;
   }
 
-  pub fn set_divisions(&mut self, divisions: [u8;4]) {
+  pub fn set_divisions(&mut self, divisions: [u8;2]) {
     CLOCK_DIVISIONS.store( 
-      divisions[0] as u32 |
-      (divisions[1] as u32) << 8 |
-      (divisions[2] as u32) << 16 |
-      (divisions[3] as u32) << 24
+      divisions[0] as u16 |
+      (divisions[1] as u16) << 8
       ,Ordering::Relaxed)
   }
 
@@ -72,11 +70,11 @@ impl Clock {
     let mut triggers: u8 = 0;
     let mut midi_outs = [ false, false ];
 
-    let divisions_u32 = CLOCK_DIVISIONS.load(Ordering::Relaxed);
+    let divisions_u16 = CLOCK_DIVISIONS.load(Ordering::Relaxed);
     
     // handle the two midi channels
     for i in 0..2 {
-      let division = (divisions_u32 >> (i*8) & 0xFF) as u32;
+      let division = (divisions_u16 >> (i*8) & 0xFF) as u32;
       if unsafe { OVERFLOWS % (division * CLOCK_TICKS_PER_QUARTER_NOTE) == 0 } {
         triggers |= 1 << i;
       }
@@ -87,17 +85,15 @@ impl Clock {
 
     let trigger_ticks_per_quarternote = TRIGGER_TICKS_PER_QUARTERNOTE.load(Ordering::Relaxed) as u32;
 
-    // handle the two trigger outs
-    for i in 2..4 {
-      let division = (divisions_u32 >> (i*8) & 0xFF) as u32;
-      if unsafe { OVERFLOWS % (division * trigger_ticks_per_quarternote) == 0 } {
-        triggers |= 1 << i;
-      }
+    // handle the trigger out
+    if unsafe { OVERFLOWS % trigger_ticks_per_quarternote == 0 } {
+      triggers |= 1 << 3;
     }
 
     unsafe {
       CLOCK_TICK_HANDLER.get(cs).map(|f| f(triggers, midi_outs, cs) ); 
-      OVERFLOWS = (OVERFLOWS + 1) % 806400; // send a big step every 24 steps
+      // reset overflows when reached largest common multiple of divisors and 24
+      OVERFLOWS = (OVERFLOWS + 1) % 806400; 
     }
   }
 }
