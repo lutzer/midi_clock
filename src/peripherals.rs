@@ -105,33 +105,8 @@ impl Peripherals {
     // init encoder interrupts
     Encoder::init(&dp.EXTI, gpioa.pa0, gpioa.pa1, &mut gpioa.crl, &mut afio );
 
-    // init display
-    let mut rst = gpiob.pb14.into_push_pull_output(&mut gpiob.crh);
-    rst.set_low().ok();
-    let mut dc = gpiob.pb15.into_push_pull_output(&mut gpiob.crh);
-    dc.set_low().ok();
-
-    let sck = gpioa.pa5.into_alternate_push_pull(&mut gpioa.crl);
-    let mosi = gpioa.pa7.into_alternate_push_pull(&mut gpioa.crl);
-
-    let spi = Spi::spi1(
-        dp.SPI1,
-        (sck, NoMiso, mosi),
-        &mut afio.mapr,
-        SPI_MODE,
-        1_u32.mhz(),
-        clocks,
-        &mut apb2
-    );
-
-    let mut delay = Delay::new(cp.SYST, clocks);
-
-    let display: DisplaySpi1 = DisplaySpi1{
-      spi: spi,
-      rst: rst,
-      dc: dc,
-      delay: delay
-    };
+    // setup delay
+    let delay = Delay::new(cp.SYST, clocks);
 
     return Peripherals {
       trigger1: Peripherals::init_trigger1(gpiob.pb5, &mut gpiob.crl),
@@ -147,7 +122,9 @@ impl Peripherals {
       usart1: Peripherals::init_usart1(dp.USART1, gpioa.pa9, gpioa.pa10, &mut gpioa.crh, &mut afio, &clocks, &mut apb2),
       usart2: Peripherals::init_usart2(dp.USART2, gpioa.pa2, gpioa.pa3, &mut gpioa.crl, &mut afio, &clocks, &mut apb1),
       
-      display: Some(display)
+      display: Peripherals::init_display(
+        dp.SPI1, gpiob.pb14, gpiob.pb15, gpioa.pa5, gpioa.pa7, &mut gpiob.crh,
+        &mut gpioa.crl, &mut afio, &clocks, &mut apb2, delay)
     };
   }
 
@@ -265,50 +242,46 @@ impl Peripherals {
     return Some(serial);
   }
 
-  // fn init_spi1() {
-  //   let sck = gpioa.pa5.into_alternate_push_pull(&mut gpioa.crl);
-  //   let miso = gpioa.pa6;
-  //   let mosi = gpioa.pa7.into_alternate_push_pull(&mut gpioa.crl);
-  //   let cs = gpioa.pa4.into_push_pull_output(&mut gpioa.crl);
+  fn init_display(
+    spi1: pac::SPI1,
+    pb14: gpio::gpiob::PB14<gpio::Input<gpio::Floating>>,
+    pb15: gpio::gpiob::PB15<gpio::Input<gpio::Floating>>,
+    pa5: gpio::gpioa::PA5<gpio::Input<gpio::Floating>>,
+    pa7: gpio::gpioa::PA7<gpio::Input<gpio::Floating>>,
+    crh: &mut gpio::gpiob::CRH,
+    crl: &mut gpio::gpioa::CRL,
+    afio: &mut afio::Parts,
+    clocks: &stm32f1xx_hal::rcc::Clocks,
+    apb2: &mut stm32f1xx_hal::rcc::APB2,
+    delay: Delay
+  ) -> Option<DisplaySpi1> {
 
-  //   let spi = Spi::spi1(
-  //       dp.SPI1,
-  //       (sck, miso, mosi),
-  //       &mut afio.mapr,
-  //       MODE,
-  //       1_u32.mhz(),
-  //       clocks,
-  //   );
-  // }
+    let mut rst = pb14.into_push_pull_output(crh);
+    rst.set_low().ok();
+    let mut dc = pb15.into_push_pull_output(crh);
+    dc.set_low().ok();
 
-  // fn init_displayi2c(
-  //   i2c: pac::I2C1,
-  //   pb8: gpio::gpiob::PB8<gpio::Input<gpio::Floating>>,
-  //   pb9: gpio::gpiob::PB9<gpio::Input<gpio::Floating>>,
-  //   crh: &mut gpio::gpiob::CRH,
-  //   afio: &mut afio::Parts,
-  //   clocks: &stm32f1xx_hal::rcc::Clocks,
-  //   apb1: &mut stm32f1xx_hal::rcc::APB1
-  // ) -> Option<DisplayI2C> {
-  //   // init i2c
-  //   let scl = pb8.into_alternate_open_drain(crh);
-  //   let sda = pb9.into_alternate_open_drain(crh);
+    let sck = pa5.into_alternate_push_pull(crl);
+    let mosi = pa7.into_alternate_push_pull(crl);
 
-  //   let i2c = BlockingI2c::i2c1(
-  //     i2c,
-  //     (scl, sda),
-  //     &mut afio.mapr,
-  //     Mode::Fast {
-  //         frequency: 400_000.hz(),
-  //         duty_cycle: DutyCycle::Ratio16to9,
-  //     },
-  //     *clocks,
-  //     apb1,
-  //     100, // start timeout
-  //     5, // start retries
-  //     100, // addr timeout
-  //     100 // data timeout
-  //    );
-  //    return Some(i2c);
-  // }
+    let spi = Spi::spi1(
+        spi1,
+        (sck, NoMiso, mosi),
+        &mut afio.mapr,
+        SPI_MODE,
+        1_u32.mhz(),
+        *clocks,
+        apb2
+    );
+
+
+    let display: DisplaySpi1 = DisplaySpi1{
+      spi: spi,
+      rst: rst,
+      dc: dc,
+      delay: delay
+    };
+
+    return Some(display);
+  }
 }
