@@ -115,10 +115,11 @@ fn on_clock_tick(trigger_ticks: u8, midi_tick: [bool;2], cs: &CriticalSection) {
   let mut context = CONTEXT.borrow(cs).borrow_mut();
   context.as_mut().map(|ctx| {
     if midi_tick[0] {
-      ctx.serial.write(2, MidiMessage::TimingClock as u8).ok();
+      #[cfg(not(feature = "debug"))]
+      ctx.serial.write(1, MidiMessage::TimingClock as u8).ok();
     }
     if midi_tick[1] {
-      ctx.serial.write(3, MidiMessage::TimingClock as u8).ok();
+      ctx.serial.write(2, MidiMessage::TimingClock as u8).ok();
     }
     ctx.triggers.fire(trigger_ticks);
   });
@@ -142,7 +143,7 @@ fn main() -> ! {
   
   let encoder = Encoder::new();
 
-  let mut display = Display::new(peripherals.displayi2c.unwrap());
+  let mut display = Display::new(peripherals.display.unwrap());
   Timer3::add_handler(1, Display::on_timer_tick);
   display.init();
 
@@ -178,11 +179,7 @@ fn main() -> ! {
     statemachine.on_change().map(|state| {
       on_state_change(&state, &mut clock, &mut display);
     });
-    display.on_update().map(|_| {
-      interrupt::free(|cs| {
-        display.flush(cs);
-      });
-    });
+    display.draw();
     
   }
 }

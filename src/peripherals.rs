@@ -8,7 +8,14 @@ use stm32f1xx_hal::{
   gpio,
   afio,
   serial::{Serial, Config},
-  i2c::{BlockingI2c, DutyCycle, Mode}
+  spi::{Spi, Spi1NoRemap, NoMiso},
+  delay::{Delay}
+};
+
+use embedded_hal::spi::{Mode, Phase, Polarity};
+pub const SPI_MODE: Mode = Mode {
+    phase: Phase::CaptureOnSecondTransition,
+    polarity: Polarity::IdleHigh,
 };
 
 use crate::timers::*;
@@ -26,12 +33,20 @@ pub type Trigger4Gpio = gpio::gpiob::PB1<gpio::Output<gpio::PushPull>>;
 
 pub type Button1Gpio = gpio::gpiob::PB12<gpio::Input<gpio::PullUp>>;
 pub type Button2Gpio = gpio::gpiob::PB13<gpio::Input<gpio::PullUp>>;
-pub type Button3Gpio = gpio::gpioa::PA7<gpio::Input<gpio::PullUp>>;
+pub type Button3Gpio = gpio::gpioa::PA4<gpio::Input<gpio::PullUp>>;
 pub type Button4Gpio = gpio::gpioa::PA6<gpio::Input<gpio::PullUp>>;
 
-pub type DisplayI2C = BlockingI2c<pac::I2C1, (
-  gpio::gpiob::PB8<gpio::Alternate<gpio::OpenDrain>>,
-  gpio::gpiob::PB9<gpio::Alternate<gpio::OpenDrain>>)>;
+pub struct DisplaySpi1 {
+  pub spi: Spi<pac::SPI1, Spi1NoRemap, (
+    gpio::gpioa::PA5<gpio::Alternate<gpio::PushPull>>, 
+    NoMiso, 
+    gpio::gpioa::PA7<gpio::Alternate<gpio::PushPull>>
+  )>,
+  pub rst: gpio::gpiob::PB14<gpio::Output<gpio::PushPull>>,
+  pub dc: gpio::gpiob::PB15<gpio::Output<gpio::PushPull>>,
+  pub delay: Delay
+}
+
 
 pub type Usart1Serial = Serial<
   USART1, (gpio::gpioa::PA9<gpio::Alternate<gpio::PushPull>>, 
@@ -53,14 +68,14 @@ pub struct Peripherals {
   pub button4: Option<Button4Gpio>,
   pub usart1: Option<Usart1Serial>,
   pub usart2: Option<Usart2Serial>,
-  pub displayi2c: Option<DisplayI2C>
+  pub display: Option<DisplaySpi1>
 }
 
 impl Peripherals {
   pub fn init() -> Peripherals {
 
     let dp = pac::Peripherals::take().unwrap();
-    // let cp = cortex_m::Peripherals::take().unwrap();
+    let cp = cortex_m::Peripherals::take().unwrap();
 
     let rcc = dp.RCC.constrain();
     let mut flash = dp.FLASH.constrain();
@@ -90,6 +105,34 @@ impl Peripherals {
     // init encoder interrupts
     Encoder::init(&dp.EXTI, gpioa.pa0, gpioa.pa1, &mut gpioa.crl, &mut afio );
 
+    // init display
+    let mut rst = gpiob.pb14.into_push_pull_output(&mut gpiob.crh);
+    rst.set_low().ok();
+    let mut dc = gpiob.pb15.into_push_pull_output(&mut gpiob.crh);
+    dc.set_low().ok();
+
+    let sck = gpioa.pa5.into_alternate_push_pull(&mut gpioa.crl);
+    let mosi = gpioa.pa7.into_alternate_push_pull(&mut gpioa.crl);
+
+    let spi = Spi::spi1(
+        dp.SPI1,
+        (sck, NoMiso, mosi),
+        &mut afio.mapr,
+        SPI_MODE,
+        1_u32.mhz(),
+        clocks,
+        &mut apb2
+    );
+
+    let mut delay = Delay::new(cp.SYST, clocks);
+
+    let display: DisplaySpi1 = DisplaySpi1{
+      spi: spi,
+      rst: rst,
+      dc: dc,
+      delay: delay
+    };
+
     return Peripherals {
       trigger1: Peripherals::init_trigger1(gpiob.pb5, &mut gpiob.crl),
       trigger2: Peripherals::init_trigger2(gpiob_pb4, &mut gpiob.crl),
@@ -98,12 +141,13 @@ impl Peripherals {
 
       button1: Peripherals::init_button1(gpiob.pb12, &mut gpiob.crh),
       button2: Peripherals::init_button2(gpiob.pb13, &mut gpiob.crh),
-      button3: Peripherals::init_button3(gpioa.pa7, &mut gpioa.crl),
+      button3: Peripherals::init_button3(gpioa.pa4, &mut gpioa.crl),
       button4: Peripherals::init_button4(gpioa.pa6, &mut gpioa.crl),
 
       usart1: Peripherals::init_usart1(dp.USART1, gpioa.pa9, gpioa.pa10, &mut gpioa.crh, &mut afio, &clocks, &mut apb2),
       usart2: Peripherals::init_usart2(dp.USART2, gpioa.pa2, gpioa.pa3, &mut gpioa.crl, &mut afio, &clocks, &mut apb1),
-      displayi2c: Peripherals::init_displayi2c(dp.I2C1, gpiob.pb8, gpiob.pb9, &mut gpiob.crh, &mut afio, &clocks, &mut apb1)
+      
+      display: Some(display)
     };
   }
 
@@ -160,10 +204,10 @@ impl Peripherals {
   }
 
   fn init_button3(
-    pa7: gpio::gpioa::PA7<gpio::Input<gpio::Floating>>, 
+    pa4: gpio::gpioa::PA4<gpio::Input<gpio::Floating>>, 
     crl: &mut gpio::gpioa::CRL
   ) -> Option<Button3Gpio> {
-    let button = pa7.into_pull_up_input(crl);
+    let button = pa4.into_pull_up_input(crl);
     return Some(button);
   }
 
@@ -191,7 +235,7 @@ impl Peripherals {
       usart1,
       (tx, rx),
       &mut afio.mapr,
-      Config::default().baudrate(115200.bps()),
+      Config::default().baudrate(if cfg!(feature="debug") { 115200.bps() } else { 31250.bps() }),
       *clocks,
       apb2,
     );
@@ -221,34 +265,50 @@ impl Peripherals {
     return Some(serial);
   }
 
-  fn init_displayi2c(
-    i2c: pac::I2C1,
-    pb8: gpio::gpiob::PB8<gpio::Input<gpio::Floating>>,
-    pb9: gpio::gpiob::PB9<gpio::Input<gpio::Floating>>,
-    crh: &mut gpio::gpiob::CRH,
-    afio: &mut afio::Parts,
-    clocks: &stm32f1xx_hal::rcc::Clocks,
-    apb1: &mut stm32f1xx_hal::rcc::APB1
-  ) -> Option<DisplayI2C> {
-    // init i2c
-    let scl = pb8.into_alternate_open_drain(crh);
-    let sda = pb9.into_alternate_open_drain(crh);
+  // fn init_spi1() {
+  //   let sck = gpioa.pa5.into_alternate_push_pull(&mut gpioa.crl);
+  //   let miso = gpioa.pa6;
+  //   let mosi = gpioa.pa7.into_alternate_push_pull(&mut gpioa.crl);
+  //   let cs = gpioa.pa4.into_push_pull_output(&mut gpioa.crl);
 
-    let i2c = BlockingI2c::i2c1(
-      i2c,
-      (scl, sda),
-      &mut afio.mapr,
-      Mode::Fast {
-          frequency: 400_000.hz(),
-          duty_cycle: DutyCycle::Ratio16to9,
-      },
-      *clocks,
-      apb1,
-      100, // start timeout
-      5, // start retries
-      100, // addr timeout
-      100 // data timeout
-     );
-     return Some(i2c);
-  }
+  //   let spi = Spi::spi1(
+  //       dp.SPI1,
+  //       (sck, miso, mosi),
+  //       &mut afio.mapr,
+  //       MODE,
+  //       1_u32.mhz(),
+  //       clocks,
+  //   );
+  // }
+
+  // fn init_displayi2c(
+  //   i2c: pac::I2C1,
+  //   pb8: gpio::gpiob::PB8<gpio::Input<gpio::Floating>>,
+  //   pb9: gpio::gpiob::PB9<gpio::Input<gpio::Floating>>,
+  //   crh: &mut gpio::gpiob::CRH,
+  //   afio: &mut afio::Parts,
+  //   clocks: &stm32f1xx_hal::rcc::Clocks,
+  //   apb1: &mut stm32f1xx_hal::rcc::APB1
+  // ) -> Option<DisplayI2C> {
+  //   // init i2c
+  //   let scl = pb8.into_alternate_open_drain(crh);
+  //   let sda = pb9.into_alternate_open_drain(crh);
+
+  //   let i2c = BlockingI2c::i2c1(
+  //     i2c,
+  //     (scl, sda),
+  //     &mut afio.mapr,
+  //     Mode::Fast {
+  //         frequency: 400_000.hz(),
+  //         duty_cycle: DutyCycle::Ratio16to9,
+  //     },
+  //     *clocks,
+  //     apb1,
+  //     100, // start timeout
+  //     5, // start retries
+  //     100, // addr timeout
+  //     100 // data timeout
+  //    );
+  //    return Some(i2c);
+  // }
 }

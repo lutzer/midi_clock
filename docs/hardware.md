@@ -29,6 +29,13 @@
 
 Only connect TX to A9, RX to A10 and GND, no need for 3.3V connection
 
+### ST7780 Display
+
+* RES -> any (PB14)
+* DC -> any (PB15)
+* SDA -> MOSI (PA7)
+* SCL -> SCK (PA5)
+
 ### BOM
 
 * 74HC367 or DM7417N ?

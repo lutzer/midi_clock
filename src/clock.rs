@@ -1,9 +1,10 @@
-use core::sync::atomic::{AtomicU16, AtomicU8, Ordering};
+use core::sync::atomic::{AtomicU16, AtomicU8, AtomicBool, Ordering};
 use cortex_m::interrupt::{ CriticalSection };
 use cortex_m::interrupt;
 
 use crate::utils::{CSCell};
 use crate::statemachine::{State, RunState};
+use crate::triggers::{TRIGGER3_MASK, TRIGGER4_MASK};
 
 pub struct Clock {
   bpm: u16
@@ -17,6 +18,8 @@ const CLOCK_TICKS_PER_QUARTER_NOTE: u32 = 24;
 
 static CLOCK_TICK_HANDLER: CSCell<Option<ClockTickHandler>> = CSCell::new(None);
 static CLOCK_DIVISIONS: AtomicU16 = AtomicU16::new(0);
+static CLOCK_RESET: AtomicBool = AtomicBool::new(true);
+
 static TRIGGER_TICKS_PER_QUARTERNOTE: AtomicU8 = AtomicU8::new(0);
 
 impl Clock {
@@ -53,6 +56,7 @@ impl Clock {
 
   pub fn set_running(&mut self, running: bool) {
     static mut PREV: bool = true;
+    CLOCK_RESET.store(true, Ordering::Relaxed);
     if unsafe { PREV != running } {
       Timer2::set_running(running);
     }
@@ -64,8 +68,16 @@ impl Clock {
     interrupt::free( |cs| CLOCK_TICK_HANDLER.set(Some(cb), cs) );
   }
 
-  pub fn on_timer_tick(cs : &CriticalSection) {
+  pub unsafe fn on_timer_tick(cs : &CriticalSection) {
     static mut OVERFLOWS : u32 = 0;
+
+    // reset Clock
+    CLOCK_RESET.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |reset| {
+      if reset {
+        OVERFLOWS = 0;
+      }
+      return Some(false);
+    }).ok();
 
     let mut triggers: u8 = 0;
     let mut midi_outs = [ false, false ];
@@ -75,10 +87,10 @@ impl Clock {
     // handle the two midi channels
     for i in 0..2 {
       let division = (divisions_u16 >> (i*8) & 0xFF) as u32;
-      if unsafe { OVERFLOWS % (division * CLOCK_TICKS_PER_QUARTER_NOTE) == 0 } {
+      if OVERFLOWS % (division * CLOCK_TICKS_PER_QUARTER_NOTE) == 0 {
         triggers |= 1 << i;
       }
-      if unsafe { OVERFLOWS % division == 0 } {
+      if OVERFLOWS % division == 0 {
         midi_outs[i] = true
       }
     }
@@ -86,14 +98,12 @@ impl Clock {
     let trigger_ticks_per_quarternote = TRIGGER_TICKS_PER_QUARTERNOTE.load(Ordering::Relaxed) as u32;
 
     // handle the trigger out
-    if unsafe { OVERFLOWS % trigger_ticks_per_quarternote == 0 } {
-      triggers |= 1 << 2;
+    if OVERFLOWS % trigger_ticks_per_quarternote == 0 {
+      triggers |= TRIGGER3_MASK;
     }
 
-    unsafe {
-      CLOCK_TICK_HANDLER.get(cs).map(|f| f(triggers, midi_outs, cs) ); 
-      // reset overflows when reached largest common multiple of divisors and 24
-      OVERFLOWS = (OVERFLOWS + 1) % 806400; 
-    }
+    CLOCK_TICK_HANDLER.get(cs).map(|f| f(triggers, midi_outs, cs) ); 
+    // reset overflows when reached largest common multiple of divisors and 24
+    OVERFLOWS = (OVERFLOWS + 1) % 806400; 
   }
 }

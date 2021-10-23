@@ -1,85 +1,91 @@
 use embedded_graphics::{
   mono_font::{ascii::FONT_10X20, MonoTextStyle},
-  pixelcolor::BinaryColor,
+  pixelcolor::{BinaryColor,Rgb565},
   prelude::*,
+  primitives::{PrimitiveStyleBuilder, Rectangle},
   text::{Baseline, Text}
 };
 
+use stm32f1xx_hal::delay::{Delay};
+
 use cortex_m::interrupt::{CriticalSection};
 
-use ssd1306::{
-  prelude::*, 
-  I2CDisplayInterface,
-  Ssd1306,
-  mode::{BufferedGraphicsMode}
-};
 
-use crate::peripherals::{DisplayI2C};
+use crate::peripherals::{DisplaySpi1};
 use crate::statemachine::{State};
-use crate::utils::*;
+use crate::utils::{u16_to_string};
 use core::sync::atomic::{AtomicBool, Ordering};
+
+use st7789::{Orientation, ST7789};
+use display_interface_spi::SPIInterfaceNoCS;
 
 const DISPLAY_UPDATE_OVERFLOWS: u8 = 50;
 
-pub type Ssd1306Display = ssd1306::Ssd1306<I2CInterface<DisplayI2C>, DisplaySize128x64, BufferedGraphicsMode<DisplaySize128x64>>;
+pub type St7789Display = st7789::ST7789<display_interface_spi::SPIInterfaceNoCS<stm32f1xx_hal::spi::Spi<stm32f1xx_hal::pac::SPI1, stm32f1xx_hal::spi::Spi1NoRemap, (stm32f1xx_hal::gpio::gpioa::PA5<stm32f1xx_hal::gpio::Alternate<stm32f1xx_hal::gpio::PushPull>>, stm32f1xx_hal::spi::NoMiso, stm32f1xx_hal::gpio::gpioa::PA7<stm32f1xx_hal::gpio::Alternate<stm32f1xx_hal::gpio::PushPull>>)>, stm32f1xx_hal::gpio::gpiob::PB15<stm32f1xx_hal::gpio::Output<stm32f1xx_hal::gpio::PushPull>>>, stm32f1xx_hal::gpio::gpiob::PB14<stm32f1xx_hal::gpio::Output<stm32f1xx_hal::gpio::PushPull>>>;
+
 
 static UPDATE_TIME_ARRIVED: AtomicBool = AtomicBool::new(false);
 
 struct DisplayStyles<'a> {
-  text: MonoTextStyle<'a, BinaryColor>
+  text: MonoTextStyle<'a, Rgb565>
 }
 
 pub struct Display<'a> {
-  display: Ssd1306Display,
+  display: St7789Display,
   updated: bool,
-  styles: DisplayStyles<'a>
+  styles: DisplayStyles<'a>,
+  delay: Delay,
+  bpm: u16
 }
 
 impl<'a> Display<'a> {
 
 
-  pub fn new(i2c: DisplayI2C) -> Display<'a> {
-    let interface = I2CDisplayInterface::new(i2c);
-    let display = Ssd1306::new(interface, DisplaySize128x64, DisplayRotation::Rotate0).into_buffered_graphics_mode();
+  pub fn new(display_peripherals: DisplaySpi1) -> Display<'a> {
+    let interface = SPIInterfaceNoCS::new(display_peripherals.spi, display_peripherals.dc);
+    let display = ST7789::new(interface, display_peripherals.rst, 240, 240);
 
     let styles = DisplayStyles {
-      text: MonoTextStyle::new(&FONT_10X20, BinaryColor::On)
+      text: MonoTextStyle::new(&FONT_10X20, Rgb565::WHITE)
     };
 
     return Display {
       display: display,
       updated: true,
-      styles: styles
+      styles: styles,
+      delay: display_peripherals.delay,
+      bpm: 0
     }
   }
 
   pub fn init(&mut self) {
-    self.display.init().unwrap();
-    self.display.clear();
-    self.display.flush().unwrap();
+    self.display.init(&mut self.delay).ok();
+    self.display.set_orientation(Orientation::Landscape).unwrap();
+    self.display.clear(Rgb565::BLACK).ok();
   }
 
   pub fn update(&mut self, state: &State) {
-    self.display.clear();
-
-    let bpm = u16_to_string(state.bpm);
-    Text::with_baseline(bpm, Point::new(50, 32), self.styles.text, Baseline::Middle)
-      .draw(&mut self.display)
-      .unwrap();
-    
-      self.updated = true;
+    self.bpm = state.bpm;
+    self.updated = true;
   }
 
-  pub fn on_update(&mut self) -> Option<()> {
+  pub fn draw(&mut self) {
     let update_time_arrived = UPDATE_TIME_ARRIVED.fetch_and(false, Ordering::Relaxed);
-    return if self.updated && update_time_arrived {
-      self.updated = false; 
-      Some(()) 
-    } else { None }
-  }
+    if self.updated && update_time_arrived {
+      let style = PrimitiveStyleBuilder::new()
+      .fill_color(Rgb565::BLACK)
+      .build();
 
-  pub fn flush(&mut self, _: &CriticalSection) {
-    self.display.flush().unwrap();
+      let rect = Rectangle::new(Point::new(50,22), Size::new(40,20)).into_styled(style);
+      rect.draw(&mut self.display).ok();
+
+      let bpm = u16_to_string(self.bpm);
+      Text::with_baseline(bpm, Point::new(50, 32), self.styles.text, Baseline::Middle)
+        .draw(&mut self.display)
+        .ok();
+      
+        self.updated = false; 
+    }
   }
 
   pub fn on_timer_tick() {

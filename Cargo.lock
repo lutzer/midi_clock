@@ -143,16 +143,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7517c040926d7b02b111884aa089177db80878533127f7c1b480d852c5fb4112"
 
 [[package]]
-name = "display-interface-i2c"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4895cd4e54e5536ef370d7f1eec787aad8275dd8ad15815aebfa71dd847b4ebf"
-dependencies = [
- "display-interface",
- "embedded-hal",
-]
-
-[[package]]
 name = "display-interface-spi"
 version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -272,13 +262,14 @@ dependencies = [
  "alloc-cortex-m",
  "cortex-m 0.7.3",
  "cortex-m-rt",
+ "display-interface-spi",
  "embedded-graphics",
  "embedded-hal",
  "heapless",
  "nb 1.0.0",
  "numtoa",
  "panic-halt",
- "ssd1306",
+ "st7789",
  "stm32f1xx-hal",
 ]
 
@@ -382,16 +373,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "388a1df253eca08550bef6c72392cfe7c30914bf41df5269b68cbd6ff8f570a3"
 
 [[package]]
-name = "ssd1306"
-version = "0.7.0"
+name = "st7789"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a1fe1e39676a72e07a9592c8a30a008e58746b47e872c81ca909b1c2f992001b"
+checksum = "cba7306a9ca07ffcafd13ac1eaac2d5cedc8e9fc0d342ef674e0f0d059c8f8a9"
 dependencies = [
  "display-interface",
- "display-interface-i2c",
- "display-interface-spi",
  "embedded-graphics-core",
  "embedded-hal",
+ "heapless",
+ "nb 1.0.0",
 ]
 
 [[package]]

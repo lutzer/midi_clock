@@ -55,19 +55,29 @@ pub mod debug_methods {
       const BUFFER_LENGTH: usize = 16;
       static mut buffer: [u8;BUFFER_LENGTH] = [0; BUFFER_LENGTH];
 
-      unsafe fn add_number(val: u16, i: &mut usize){
+      unsafe fn add_number(val: u16, i: &mut usize) {
         let string = u16_to_string(val);
         buffer[*i..*i+string.len()].copy_from_slice(string.as_bytes());
         *i += string.len();
       }
 
+      unsafe fn add_string(s: &str, i: &mut usize) {
+        buffer[*i..*i+s.len()].copy_from_slice(s.as_bytes());
+        *i += s.len();
+      }
+
       unsafe {
         let mut i = 0;
+        add_string("b", &mut i);
         add_number(self.bpm, &mut i);
-        buffer[i] = ',' as u8; i += 1;
+        add_string(" r", &mut i);
         add_number(self.running as u16, &mut i);
-        buffer[i] = ',' as u8; i += 1;
+        add_string(" m", &mut i);
         add_number(self.trigger_clock_multiplier as u16, &mut i);
+        add_string(" d", &mut i);
+        add_number(self.clock_divisions[0] as u16, &mut i);
+        add_string(",", &mut i);
+        add_number(self.clock_divisions[1] as u16, &mut i);
         for i in i..BUFFER_LENGTH {
           buffer[i] = ' ' as u8;
         }
@@ -75,14 +85,6 @@ pub mod debug_methods {
       }
     }
   }
-
-  // impl<'a> Stringable<'a> for State {
-  //   fn into_string(self) -> &'a str {
-  //     let bpm = u16_to_string(self.bpm);
-  //     let s = concat!["run", bpm];
-  //     return s;
-  //   }
-  // }
   
   pub fn debug_print<'a, T>(s: T) where T : Stringable<'a> {
     cortex_m::interrupt::free(|cs| {
