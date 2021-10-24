@@ -78,15 +78,24 @@ fn on_state_change(state: &State, clock: &mut Clock, display: &mut Display) {
   if let Some(prev_state) = unsafe { PREV_STATE } {
     // check for state changes
     if prev_state.running != state.running {
-      clock.set_running(state.running == RunState::RUNNING || state.running == RunState::SYNC);
+      clock.set_runstate(state.running);
       send_midi_ctrl_msg(state.running, prev_state.running);
     }
     if prev_state.bpm != state.bpm {
       clock.set_bpm(state.bpm);
       display.update(state);
     }
-    if prev_state.trigger_clock_multiplier != state.trigger_clock_multiplier {
-      clock.set_trigger_multiplier(state.trigger_clock_multiplier);
+    if prev_state.clock_trigger_multiplier != state.clock_trigger_multiplier {
+      clock.set_trigger_multiplier(state.clock_trigger_multiplier);
+    }
+    if prev_state.clock_divisions[0] != state.clock_divisions[0] || prev_state.clock_divisions[1] != state.clock_divisions[1] {
+      clock.set_divisions(state.clock_divisions);
+    }
+    if prev_state.clock_bar_length != state.clock_bar_length {
+      clock.set_bar_length(state.clock_bar_length);
+    } 
+    if state.clock_sync {
+      clock.sync();
     }
   }
 
@@ -98,14 +107,19 @@ fn send_midi_ctrl_msg(current: RunState, _: RunState) {
     let mut context = CONTEXT.borrow(cs).borrow_mut();
     context.as_mut().map(|ctx| {
       match current {
-        RunState::RUNNING => ctx.serial.write(2, MidiMessage::Continue as u8).ok(),
-        RunState::PAUSED => ctx.serial.write(2, MidiMessage::Stop as u8).ok(),
-        RunState::STOPPED => ctx.serial.write(2, MidiMessage::Stop as u8).ok(),
+        RunState::RUNNING => { 
+          ctx.serial.write(2, MidiMessage::Continue as u8).ok(); 
+        },
+        RunState::PAUSED => { 
+          ctx.serial.write(2, MidiMessage::Stop as u8).ok(); 
+        },
+        RunState::STOPPED => { 
+          ctx.serial.write(2, MidiMessage::Stop as u8).ok(); 
+        },
         RunState::RESTART => { 
+          ctx.serial.write(2, MidiMessage::Start as u8).ok();
           ctx.triggers.fire(TRIGGER4_MASK);
-          ctx.serial.write(2, MidiMessage::Start as u8).ok()
         }
-        _ => None
       }
     });
   });

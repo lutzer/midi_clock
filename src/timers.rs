@@ -39,6 +39,13 @@ impl Timer2  {
   }
 
   pub fn set_running(running: bool) {
+    static mut PREV_RUNNING: bool = false;
+    
+    unsafe {
+      if PREV_RUNNING == running { return; }
+      PREV_RUNNING = running;
+    }
+
     cortex_m::interrupt::free(|cs| {
       let mut tim2 = G_TIM2.borrow(cs).borrow_mut();
       tim2.as_mut().map(|t| {

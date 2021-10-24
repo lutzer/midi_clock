@@ -1,4 +1,4 @@
-use core::sync::atomic::{AtomicU16, AtomicU8, AtomicBool, Ordering};
+use core::sync::atomic::{AtomicU32, Ordering};
 use cortex_m::interrupt::{ CriticalSection };
 use cortex_m::interrupt;
 
@@ -17,34 +17,79 @@ type ClockTickHandler = fn(u8, [bool;2], &CriticalSection);
 const CLOCK_TICKS_PER_QUARTER_NOTE: u32 = 24;
 
 static CLOCK_TICK_HANDLER: CSCell<Option<ClockTickHandler>> = CSCell::new(None);
-static CLOCK_DIVISIONS: AtomicU16 = AtomicU16::new(0);
-static CLOCK_RESET: AtomicBool = AtomicBool::new(true);
+static CLOCK_TICK_SETTINGS: AtomicU32 = AtomicU32::new(0);
 
-static TRIGGER_TICKS_PER_QUARTERNOTE: AtomicU8 = AtomicU8::new(0);
+fn clock_settings_store(divisions: [u8;2], triggers_ppq: u8, bar_length: u8, reset: bool, sync: bool) {
+  let settings : u32 =  
+    (divisions[0] as u32) | (divisions[1] as u32) << 8 |
+    (triggers_ppq as u32) << 16 |
+    (bar_length as u32) << 24 |
+    (reset as u32) << 28 |
+    (sync as u32) << 29;
+  CLOCK_TICK_SETTINGS.store(settings, Ordering::Relaxed)
+}
+
+fn clock_settings_load() -> ([u8;2], u8, u8, bool, bool) {
+  let settings_u32 = CLOCK_TICK_SETTINGS.load(Ordering::Relaxed);
+  return(
+    [(settings_u32) as u8, (settings_u32 >> 8) as u8],
+    (settings_u32 >> 16) as u8,
+    (settings_u32 >> 24 & 0xF) as u8,
+    (settings_u32 >> 28 & 0b1) == 1,
+    (settings_u32 >> 29 & 0b1) == 1,
+  )
+}
+
+fn clock_settings_store_reset(reset: bool) {
+  CLOCK_TICK_SETTINGS.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |x| {
+    return Some((x & !(1 << 28)) | (reset as u32) << 28);
+  }).ok();
+}
+
+fn clock_settings_store_sync(sync: bool) {
+  CLOCK_TICK_SETTINGS.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |x| {
+    return Some((x & !(1 << 29)) | (sync as u32) << 29);
+  }).ok();
+}
 
 impl Clock {
   pub fn new(state: &State) -> Clock {
     let mut clock = Clock{ bpm: 1 };
     clock.set_bpm(state.bpm);
-    clock.set_running(false);
-    clock.set_running(state.running == RunState::RUNNING );
-    clock.set_divisions(state.clock_divisions);
-    clock.set_trigger_multiplier(state.trigger_clock_multiplier);
+    clock.set_runstate(state.running);
+
+    clock_settings_store(
+      state.clock_divisions, 
+      state.clock_trigger_multiplier, 
+      state.clock_bar_length, 
+      false, 
+      state.clock_sync
+    );
 
     Timer2::set_handler(Clock::on_timer_tick);
     return clock;
   }
 
-  pub fn set_divisions(&mut self, divisions: [u8;2]) {
-    CLOCK_DIVISIONS.store( 
-      divisions[0] as u16 |
-      (divisions[1] as u16) << 8
-      ,Ordering::Relaxed)
+  pub fn set_divisions(&self, divisions: [u8;2]) {
+    CLOCK_TICK_SETTINGS.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |x| {
+      return Some((x & !0xFFFF) | (divisions[0] as u32) | (divisions[1] as u32) << 8);
+    }).ok();
   }
 
-  pub fn set_trigger_multiplier(&mut self, multiplier: u8) {
-    let ticks_per_quarternote: u8 = CLOCK_TICKS_PER_QUARTER_NOTE as u8 / multiplier;
-    TRIGGER_TICKS_PER_QUARTERNOTE.store(ticks_per_quarternote, Ordering::Relaxed);
+  pub fn set_trigger_multiplier(&self, multiplier: u8) {
+    CLOCK_TICK_SETTINGS.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |x| {
+      return Some((x & !0xFF << 16) | (multiplier as u32) << 16);
+    }).ok();
+  }
+
+  pub fn set_bar_length(&self, bar_length: u8) {
+    CLOCK_TICK_SETTINGS.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |x| {
+      return Some((x & !0xF << 24) | (bar_length as u32) << 24);
+    }).ok();
+  }
+
+  pub fn sync(&self) {
+    clock_settings_store_sync(true);
   }
 
   pub fn set_bpm(&mut self, bpm: u16) {
@@ -54,15 +99,20 @@ impl Clock {
     Timer2::set_interval(intervall_in_us);
   }
 
-  pub fn set_running(&mut self, running: bool) {
-    static mut PREV: bool = true;
-    CLOCK_RESET.store(true, Ordering::Relaxed);
-    if unsafe { PREV != running } {
-      Timer2::set_running(running);
+  pub fn set_runstate(&mut self, running: RunState) {
+    match running {
+      RunState::RUNNING => {
+        Timer2::set_running(true);
+      },
+      RunState::STOPPED => {
+        clock_settings_store_reset(true);
+        Timer2::set_running(false);
+      },
+      _ => {
+        Timer2::set_running(false);
+      }
     }
-    unsafe { PREV = running }
   }
-
 
   pub fn on_tick<'a>(&self, cb: ClockTickHandler) {
     interrupt::free( |cs| CLOCK_TICK_HANDLER.set(Some(cb), cs) );
@@ -71,35 +121,34 @@ impl Clock {
   pub unsafe fn on_timer_tick(cs : &CriticalSection) {
     static mut OVERFLOWS : u32 = 0;
 
+    let (divisions, triggers_ppq, bar_length, reset, sync) = clock_settings_load();
+
     // reset Clock
-    CLOCK_RESET.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |reset| {
-      if reset {
-        OVERFLOWS = 0;
-      }
-      return Some(false);
-    }).ok();
+    OVERFLOWS = if reset { 0 } else { OVERFLOWS };
+    clock_settings_store_reset(false);
 
     let mut triggers: u8 = 0;
     let mut midi_outs = [ false, false ];
-
-    let divisions_u16 = CLOCK_DIVISIONS.load(Ordering::Relaxed);
     
     // handle the two midi channels
     for i in 0..2 {
-      let division = (divisions_u16 >> (i*8) & 0xFF) as u32;
-      if OVERFLOWS % (division * CLOCK_TICKS_PER_QUARTER_NOTE) == 0 {
+      if OVERFLOWS % (divisions[i] as u32 * CLOCK_TICKS_PER_QUARTER_NOTE) == 0 {
         triggers |= 1 << i;
       }
-      if OVERFLOWS % division == 0 {
+      if OVERFLOWS % divisions[i] as u32 == 0 {
         midi_outs[i] = true
       }
     }
 
-    let trigger_ticks_per_quarternote = TRIGGER_TICKS_PER_QUARTERNOTE.load(Ordering::Relaxed) as u32;
-
     // handle the trigger out
-    if OVERFLOWS % trigger_ticks_per_quarternote == 0 {
+    if OVERFLOWS % (CLOCK_TICKS_PER_QUARTER_NOTE/triggers_ppq as u32) == 0 {
       triggers |= TRIGGER3_MASK;
+    }
+
+    // handle reset out after 4 quarter notes
+    if sync && OVERFLOWS % (CLOCK_TICKS_PER_QUARTER_NOTE * bar_length as u32) == 0 {
+      clock_settings_store_sync(false);
+      triggers |= TRIGGER4_MASK;
     }
 
     CLOCK_TICK_HANDLER.get(cs).map(|f| f(triggers, midi_outs, cs) ); 

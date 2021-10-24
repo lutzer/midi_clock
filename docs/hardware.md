@@ -38,5 +38,6 @@ Only connect TX to A9, RX to A10 and GND, no need for 3.3V connection
 
 ### BOM
 
-* 74HC367 or DM7417N ?
+* Hex Buffer: 74HC 365
+* Clock in: BC 635 Bipolartransistor, NPN, 45V, 1A, 0,8W, TO-92
 
