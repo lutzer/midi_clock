@@ -26,7 +26,6 @@ static TIMER2_OVERFLOWS: AtomicU32 = AtomicU32::new(1);
 pub struct Timer2;
 impl Timer2  {
   pub fn init(tim2: TIM2, clocks: &stm32f1xx_hal::rcc::Clocks, apb1: &mut stm32f1xx_hal::rcc::APB1) {
-
     // set timer 2 to 50us
     let timer = Timer::tim2(tim2, &clocks, apb1).start_count_down(50.us());
 
@@ -73,10 +72,6 @@ impl Timer2  {
     TIMER2_OVERFLOWS.store(overflows, Ordering::Relaxed);
   }
 
-  // pub fn set_frequency(hz: u32) {
-  //   TIMER2_OVERFLOWS.store(us/10, Ordering::Relaxed);
-  // }
-
   pub fn set_handler(cb: CSTimerHandler) {
     cortex_m::interrupt::free(|cs| {
       TIMER_2_HANDLER.set(Some(cb), cs);
@@ -112,7 +107,6 @@ static G_TIM3: Mutex<RefCell<Option<CountDownTimer<TIM3>>>> = Mutex::new(RefCell
 pub struct Timer3;
 impl Timer3 {
   pub fn init(tim3: TIM3, clocks: &stm32f1xx_hal::rcc::Clocks, apb1: &mut stm32f1xx_hal::rcc::APB1) {
-    
     // set timer3 to 1khz = 1ms
     let mut timer = Timer::tim3(tim3, &clocks, apb1).start_count_down(1000.hz());
     

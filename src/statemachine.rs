@@ -35,7 +35,7 @@ impl Statemachine {
         bpm: 120,
         clock_trigger_multiplier: 4,
         clock_divisions: [1,4],
-        clock_bar_length: 7,
+        clock_bar_length: 4,
         clock_sync: false,
         running: RunState::RUNNING
       },

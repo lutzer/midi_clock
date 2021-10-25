@@ -12,6 +12,7 @@ pub mod debug_methods {
   use crate::utils::{u16_to_string, i16_to_string, u32_to_string};
   use crate::statemachine::State;
   use core::str;
+  use cortex_m::interrupt::{CriticalSection};
 
   pub trait Stringable<'a> {
     fn into_string(self) -> &'a str;
@@ -73,7 +74,7 @@ pub mod debug_methods {
         add_string(" r", &mut i);
         add_number(self.running as u16, &mut i);
         add_string(" m", &mut i);
-        add_number(self.trigger_clock_multiplier as u16, &mut i);
+        add_number(self.clock_trigger_multiplier as u16, &mut i);
         add_string(" d", &mut i);
         add_number(self.clock_divisions[0] as u16, &mut i);
         add_string(",", &mut i);

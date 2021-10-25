@@ -29,13 +29,12 @@ enum EncoderState {
   Undefined = 0x40,
 }
 
-// lookup table for transitioning the encoder state from current state and current reading
 const TRANSITION_LOOKUPTABLE: [[EncoderState; 4]; 7] = [
   [ EncoderState::Undefined, EncoderState::CcwStart, EncoderState::CwStart, EncoderState::Undefined ],  // init state -> 1,2
 
   [ EncoderState::Undefined, EncoderState::Undefined, EncoderState::Undefined, EncoderState::CwStep1 ], // cw start -> 3
-  [ EncoderState::Undefined, EncoderState::CwStep2, EncoderState::Undefined, EncoderState::Undefined ], // cw step1 -> 1, <- 2
-  [ EncoderState::CwFinal, EncoderState::Undefined, EncoderState::Undefined, EncoderState::Undefined ], // cw step2 -> 0, <- 2
+  [ EncoderState::Undefined, EncoderState::CwStep2, EncoderState::CwStart, EncoderState::Undefined ], // cw step1 -> 1, <- 2
+  [ EncoderState::CwFinal, EncoderState::CwStep2, EncoderState::Undefined, EncoderState::CwStep1 ], // cw step2 -> 0, <- 2
 
   [ EncoderState::Undefined, EncoderState::Undefined, EncoderState::Undefined, EncoderState::CcwStep1 ], // ccw start -> 3
   [ EncoderState::Undefined, EncoderState::Undefined, EncoderState::CcwStep2, EncoderState::Undefined ], // ccw step1 -> 2, <- 0
@@ -118,46 +117,45 @@ impl Encoder {
   }
 }
 
-fn on_interrupt(reading: u8) {
+unsafe fn on_interrupt(pin1: Option<bool>, pin2: Option<bool>) {
   static mut STATE: EncoderState = EncoderState::Undefined;
+  static mut READING: u8 = 0;
 
-  unsafe { 
-    STATE = get_transition((STATE as u8) & 0x0F, reading);
-    
-    if STATE as u8 == EncoderState::CwFinal as u8 {
-      ENCODER_POSITION.fetch_add(1, Ordering::Relaxed);
-    } else if STATE as u8 == EncoderState::CcwFinal as u8 {
-      ENCODER_POSITION.fetch_add(-1, Ordering::Relaxed);
-    }
+  pin1.map(|r| {
+    READING &= !0b01;
+    READING |= r as u8;
+  });
+
+  pin2.map(|r| {
+    READING &= !0b10;
+    READING |= (r as u8) << 1;
+  });
+
+  STATE = get_transition((STATE as u8) & 0x0F, READING);
+  
+  if STATE as u8 == EncoderState::CwFinal as u8 {
+    ENCODER_POSITION.fetch_add(1, Ordering::Relaxed);
+  } else if STATE as u8 == EncoderState::CcwFinal as u8 {
+    ENCODER_POSITION.fetch_add(-1, Ordering::Relaxed);
   }
 }
 
+// interrupt for pin1
 #[interrupt]
-fn EXTI0() {
+unsafe fn EXTI0() {
   cortex_m::interrupt::free(|cs|  {
     let mut enc_pin1 = ENCODER_PIN1.borrow(cs).borrow_mut();
-    let enc_pin2 = ENCODER_PIN2.borrow(cs).borrow_mut();
-
-    let reading = enc_pin1.as_ref().unwrap().is_low().unwrap() as u8 |
-      (enc_pin2.as_ref().unwrap().is_low().unwrap() as u8) << 1;
-
-    on_interrupt(reading);
-
+    on_interrupt(Some(enc_pin1.as_ref().unwrap().is_low().unwrap()), None);
     enc_pin1.as_mut().unwrap().clear_interrupt_pending_bit();
   });
 }
 
+// interrupt for pin2
 #[interrupt]
-fn EXTI1() {
+unsafe fn EXTI1() {
   cortex_m::interrupt::free(|cs|  {
-    let enc_pin1 = ENCODER_PIN1.borrow(cs).borrow_mut();
     let mut enc_pin2 = ENCODER_PIN2.borrow(cs).borrow_mut();
-
-    let reading = enc_pin1.as_ref().unwrap().is_low().unwrap() as u8 |
-      (enc_pin2.as_ref().unwrap().is_low().unwrap() as u8) << 1;
-
-    on_interrupt(reading);
-
+    on_interrupt(None, Some(enc_pin2.as_ref().unwrap().is_low().unwrap()));
     enc_pin2.as_mut().unwrap().clear_interrupt_pending_bit();
   });
 }

@@ -98,7 +98,6 @@ fn on_state_change(state: &State, clock: &mut Clock, display: &mut Display) {
       clock.sync();
     }
   }
-
   unsafe { PREV_STATE = Some(*state) }
 }
 

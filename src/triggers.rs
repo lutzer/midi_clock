@@ -18,10 +18,10 @@ const TIMER_OVERFLOW_COUNT: u8 = 5;
 static TRIGGERS_STARTED: AtomicU8 = AtomicU8::new(0);
 
 pub struct Triggers {
-  trigger1: Trigger1Gpio, 
-  trigger2: Trigger2Gpio, 
-  trigger3: Trigger3Gpio, 
-  trigger4: Trigger4Gpio
+  trigger1: Trigger1Gpio, // midi out1+2
+  trigger2: Trigger2Gpio, // midi out3+4
+  trigger3: Trigger3Gpio, // trigger
+  trigger4: Trigger4Gpio  // reset trigger
 }
 
 impl Triggers  {
