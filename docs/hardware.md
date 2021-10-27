@@ -25,6 +25,8 @@
 | PA11 | USB D-                                    |
 | PA12 | USB D+                                    |
 | PB3 |Trigger In|
+| PB6 |EEPROM IC SCL|
+| PB7 |EEPROM IC SDA|
 
 ### Debugging with UART Adapter
 
