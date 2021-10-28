@@ -1,9 +1,16 @@
 #[derive(Copy, Clone, PartialEq)]
 pub enum RunState {
   STOPPED,
-  RESTART,
+  STOPPING,
   RUNNING,
   PAUSED
+}
+
+#[derive(Copy, Clone, PartialEq)]
+pub enum ClockSource {
+  Internal,
+  MidiIn,
+  TriggerIn
 }
 
 #[derive(Copy, Clone)]
@@ -13,6 +20,7 @@ pub struct State {
   pub clock_divisions: [u8; 2], // divisions for clock 0: midi out1+2, 1: midi out 2+3, 2: trigger1, 3: trigger2
   pub clock_bar_length: u8, // how many quarters per bar for resync
   pub clock_sync: bool,
+  pub clock_source: ClockSource,
   pub running: RunState, // run state of the clock
 }
 
@@ -23,7 +31,7 @@ pub struct Statemachine {
 
 // define state constants
 const BPM_RANGE: (u16,u16) = (30, 320);
-const DIVISION_STEPS: [u8;10] = [1,2,3,4,5,6,7,8,16,32]; // lcm is 33600
+const DIVISION_STEPS: [u8;10] = [1,2,3,4,5,6,7,8,16,32]; // largest common multiple is 33600
 const MULTIPLIERS: [u8;8] = [1,2,3,4,6,8,12,24];
 const BAR_LENGTHS_RANGE: (u8,u8) = (1,15);
 
@@ -37,6 +45,7 @@ impl Statemachine {
         clock_divisions: [1,4],
         clock_bar_length: 4,
         clock_sync: false,
+        clock_source: ClockSource::Internal,
         running: RunState::RUNNING
       },
       changed: true
@@ -48,7 +57,6 @@ impl Statemachine {
       let state = self.state.clone();
 
       self.changed = false;
-      self.state.clock_sync = false; // flip sync back again
 
       return Some(state);
     } else {
@@ -74,15 +82,17 @@ impl Statemachine {
   }
 
   pub fn button2_pressed(&mut self, pressed : bool) {
-    self.state.running = if pressed { RunState::STOPPED } else { RunState::RESTART };
+    self.state.running = if pressed { RunState::STOPPING } else { RunState::STOPPED };
     self.changed = true;
   }
 
   pub fn button3_pressed(&mut self, pressed : bool) {
     if pressed {
       self.state.clock_sync = true;
-      self.changed = true;
+    } else {
+      self.state.clock_sync = false;
     }
+    self.changed = true;
   }
 
   pub fn encoder_pressed(&mut self, _pressed : bool) {

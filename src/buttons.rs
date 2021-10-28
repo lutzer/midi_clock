@@ -68,10 +68,10 @@ impl Buttons {
     return None;
   }
 
-  pub fn on_timer_tick() {
+  pub unsafe fn on_timer_tick() {
     static mut OVERFLOWS : u8 = 0;
 
-    if unsafe { OVERFLOWS > TIMER_OVERFLOW_COUNT } {
+    if OVERFLOWS > TIMER_OVERFLOW_COUNT {
       BUTTON_DEBOUNCE_COUNTERS.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |x| {
         let low = x & 0xFF;
         let high = x >> 8;
@@ -80,9 +80,9 @@ impl Buttons {
         let increment : u16 = (x | high) | ((!(low | high) | high) << 8);
         return Some(increment)
       }).ok();
-      unsafe { OVERFLOWS = 0; }
+      OVERFLOWS = 0;
     } else {
-      unsafe { OVERFLOWS += 1; }
+      OVERFLOWS += 1;
     }
   }
 }

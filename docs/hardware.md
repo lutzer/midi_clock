@@ -18,26 +18,29 @@
 | PA1  | Enc2                                      |
 | PA9  | MIDI OUT1+2 (Hex Buffer1+2)               |
 | PB5  | TRIGGER1 (LED MIDI OUT1+2)                |
-| PB2 | MIDI OUT3+4 (Hex Buffer3+4)                |
+| PA2 | MIDI OUT3+4 (Hex Buffer3+4)                |
 | PB4  | TRIGGER2 (LED MIDI OUT3+4)                |
 | PB0  | TRIGGER3 (Hex Buffer5) & LED3             |
 | PB1  | TRIGGER4 RESET (Hex Buffer6) & LED4       |
 | PA11 | USB D-                                    |
 | PA12 | USB D+                                    |
-| PB3 |Trigger In|
+| PB3 |Clock In|
 | PB6 |EEPROM IC SCL|
 | PB7 |EEPROM IC SDA|
+| PA8 |Display RS|
+| PB15 |Display E|
+| PB14 |Display D0|
+| PB10 |Display D1|
+| PA4 |Display D2|
+| PA5 |Display D3|
 
 ### Debugging with UART Adapter
 
 Only connect TX to A9, RX to A10 and GND, no need for 3.3V connection
 
-### ST7780 Display
+### HD44780 Display
 
-* RES -> any (PB14)
-* DC -> any (PB15)
-* SDA -> MOSI (PA7)
-* SCL -> SCK (PA5)
+![](images/lcd_interface.jpeg)
 
 ### BOM
 

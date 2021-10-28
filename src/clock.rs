@@ -46,8 +46,8 @@ impl ClockSettings {
 
   pub fn read(reset: bool) -> ClockSettings {
     let settings_u32 = CLOCK_TICK_SETTINGS.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |s| {
-      // set reset and sync bit to zero
-      return if reset { Some(s & !((1 << 28) | (1 << 29))) } else { Some(s) };
+      // set reset bit to zero
+      return if reset { Some(s & !(1 << 28)) } else { Some(s) };
     }).unwrap();
     return ClockSettings {
       divisions: [(settings_u32) as u8, (settings_u32 >> 8) as u8],
@@ -96,9 +96,9 @@ impl Clock {
     ClockSettings::store(settings);
   }
 
-  pub fn sync(&self) {
+  pub fn sync(&self, sync: bool) {
     let mut settings = ClockSettings::read(false);
-    settings.sync = true;
+    settings.sync = sync;
     ClockSettings::store(settings);
   }
 

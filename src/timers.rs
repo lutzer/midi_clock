@@ -12,7 +12,7 @@ use core::cell::{RefCell};
 use crate::utils::{CSCell};
 
 type CSTimerHandler = unsafe fn(&CriticalSection);
-type TimerHandler = fn();
+type TimerHandler = unsafe fn();
 
 const MAX_TIM2_HANDLERS: usize = 3;
 

@@ -8,7 +8,6 @@ use stm32f1xx_hal::{
   gpio,
   afio,
   serial::{Serial, Config},
-  spi::{Spi, Spi1NoRemap, NoMiso},
   delay::{Delay}
 };
 
@@ -33,17 +32,16 @@ pub type Trigger4Gpio = gpio::gpiob::PB1<gpio::Output<gpio::PushPull>>;
 
 pub type Button1Gpio = gpio::gpiob::PB12<gpio::Input<gpio::PullUp>>;
 pub type Button2Gpio = gpio::gpiob::PB13<gpio::Input<gpio::PullUp>>;
-pub type Button3Gpio = gpio::gpioa::PA4<gpio::Input<gpio::PullUp>>;
+pub type Button3Gpio = gpio::gpioa::PA7<gpio::Input<gpio::PullUp>>;
 pub type Button4Gpio = gpio::gpioa::PA6<gpio::Input<gpio::PullUp>>;
 
-pub struct DisplaySpi1 {
-  pub spi: Spi<pac::SPI1, Spi1NoRemap, (
-    gpio::gpioa::PA5<gpio::Alternate<gpio::PushPull>>, 
-    NoMiso, 
-    gpio::gpioa::PA7<gpio::Alternate<gpio::PushPull>>
-  )>,
-  pub rst: gpio::gpiob::PB14<gpio::Output<gpio::PushPull>>,
-  pub dc: gpio::gpiob::PB15<gpio::Output<gpio::PushPull>>,
+pub struct DisplayPins {
+  pub rs: gpio::gpioa::PA8<gpio::Output<gpio::PushPull>>,
+  pub enable: gpio::gpiob::PB15<gpio::Output<gpio::PushPull>>,
+  pub d4: gpio::gpiob::PB14<gpio::Output<gpio::PushPull>>,
+  pub d5: gpio::gpiob::PB10<gpio::Output<gpio::PushPull>>,
+  pub d6: gpio::gpioa::PA4<gpio::Output<gpio::PushPull>>,
+  pub d7: gpio::gpioa::PA5<gpio::Output<gpio::PushPull>>,
   pub delay: Delay
 }
 
@@ -68,7 +66,7 @@ pub struct Peripherals {
   pub button4: Option<Button4Gpio>,
   pub usart1: Option<Usart1Serial>,
   pub usart2: Option<Usart2Serial>,
-  pub display: Option<DisplaySpi1>
+  pub display: Option<DisplayPins>
 }
 
 impl Peripherals {
@@ -116,15 +114,14 @@ impl Peripherals {
 
       button1: Peripherals::init_button1(gpiob.pb12, &mut gpiob.crh),
       button2: Peripherals::init_button2(gpiob.pb13, &mut gpiob.crh),
-      button3: Peripherals::init_button3(gpioa.pa4, &mut gpioa.crl),
+      button3: Peripherals::init_button3(gpioa.pa7, &mut gpioa.crl),
       button4: Peripherals::init_button4(gpioa.pa6, &mut gpioa.crl),
 
       usart1: Peripherals::init_usart1(dp.USART1, gpioa.pa9, gpioa.pa10, &mut gpioa.crh, &mut afio, &clocks, &mut apb2),
       usart2: Peripherals::init_usart2(dp.USART2, gpioa.pa2, gpioa.pa3, &mut gpioa.crl, &mut afio, &clocks, &mut apb1),
       
-      display: Peripherals::init_display(
-        dp.SPI1, gpiob.pb14, gpiob.pb15, gpioa.pa5, gpioa.pa7, &mut gpiob.crh,
-        &mut gpioa.crl, &mut afio, &clocks, &mut apb2, delay)
+      display: Peripherals::init_display(gpioa.pa8, gpiob.pb15, gpiob.pb14, gpiob.pb10, 
+        gpioa.pa4, gpioa.pa5, &mut gpiob.crh, &mut gpioa.crh, &mut gpioa.crl, delay)
     };
   }
 
@@ -181,10 +178,10 @@ impl Peripherals {
   }
 
   fn init_button3(
-    pa4: gpio::gpioa::PA4<gpio::Input<gpio::Floating>>, 
+    pa7: gpio::gpioa::PA7<gpio::Input<gpio::Floating>>, 
     crl: &mut gpio::gpioa::CRL
   ) -> Option<Button3Gpio> {
-    let button = pa4.into_pull_up_input(crl);
+    let button = pa7.into_pull_up_input(crl);
     return Some(button);
   }
 
@@ -243,42 +240,25 @@ impl Peripherals {
   }
 
   fn init_display(
-    spi1: pac::SPI1,
-    pb14: gpio::gpiob::PB14<gpio::Input<gpio::Floating>>,
+    pa8: gpio::gpioa::PA8<gpio::Input<gpio::Floating>>,
     pb15: gpio::gpiob::PB15<gpio::Input<gpio::Floating>>,
+    pb14: gpio::gpiob::PB14<gpio::Input<gpio::Floating>>,
+    pb10: gpio::gpiob::PB10<gpio::Input<gpio::Floating>>,
+    pa4: gpio::gpioa::PA4<gpio::Input<gpio::Floating>>,
     pa5: gpio::gpioa::PA5<gpio::Input<gpio::Floating>>,
-    pa7: gpio::gpioa::PA7<gpio::Input<gpio::Floating>>,
-    crh: &mut gpio::gpiob::CRH,
-    crl: &mut gpio::gpioa::CRL,
-    afio: &mut afio::Parts,
-    clocks: &stm32f1xx_hal::rcc::Clocks,
-    apb2: &mut stm32f1xx_hal::rcc::APB2,
+    crhb: &mut gpio::gpiob::CRH,
+    crha: &mut gpio::gpioa::CRH,
+    crla: &mut gpio::gpioa::CRL,
     delay: Delay
-  ) -> Option<DisplaySpi1> {
+  ) -> Option<DisplayPins> {
 
-    let mut rst = pb14.into_push_pull_output(crh);
-    rst.set_low().ok();
-    let mut dc = pb15.into_push_pull_output(crh);
-    dc.set_low().ok();
-
-    let sck = pa5.into_alternate_push_pull(crl);
-    let mosi = pa7.into_alternate_push_pull(crl);
-
-    let spi = Spi::spi1(
-        spi1,
-        (sck, NoMiso, mosi),
-        &mut afio.mapr,
-        SPI_MODE,
-        1_u32.mhz(),
-        *clocks,
-        apb2
-    );
-
-
-    let display: DisplaySpi1 = DisplaySpi1{
-      spi: spi,
-      rst: rst,
-      dc: dc,
+    let display: DisplayPins = DisplayPins{
+      rs: pa8.into_push_pull_output(crha),
+      enable: pb15.into_push_pull_output(crhb),
+      d4: pb14.into_push_pull_output(crhb),
+      d5: pb10.into_push_pull_output(crhb),
+      d6: pa4.into_push_pull_output(crla),
+      d7: pa5.into_push_pull_output(crla),
       delay: delay
     };
 

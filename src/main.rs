@@ -94,8 +94,8 @@ fn on_state_change(state: &State, clock: &mut Clock, display: &mut Display) {
     if prev_state.clock_bar_length != state.clock_bar_length {
       clock.set_bar_length(state.clock_bar_length);
     } 
-    if state.clock_sync {
-      clock.sync();
+    if prev_state.clock_sync != state.clock_sync {
+      clock.sync(state.clock_sync);
     }
   }
   unsafe { PREV_STATE = Some(*state) }
@@ -112,10 +112,10 @@ fn send_midi_ctrl_msg(current: RunState, _: RunState) {
         RunState::PAUSED => { 
           ctx.serial.write(2, MidiMessage::Stop as u8).ok(); 
         },
-        RunState::STOPPED => { 
+        RunState::STOPPING => { 
           ctx.serial.write(2, MidiMessage::Stop as u8).ok(); 
         },
-        RunState::RESTART => { 
+        RunState::STOPPED => { 
           ctx.serial.write(2, MidiMessage::Start as u8).ok();
           ctx.triggers.fire(TRIGGER4_MASK);
         }
@@ -156,10 +156,6 @@ fn main() -> ! {
   
   let encoder = Encoder::new();
 
-  let mut display = Display::new(peripherals.display.unwrap());
-  Timer3::add_handler(1, Display::on_timer_tick);
-  display.init();
-
   // create global context to share peripherals among interrupts
   {
     let triggers = Triggers::new(
@@ -177,6 +173,10 @@ fn main() -> ! {
     });
   }
 
+  // setup display
+  let mut display = Display::new(peripherals.display.unwrap());
+  Timer3::add_handler(1, Display::on_timer_tick);
+  display.init();
   display.update(&initial_state);
 
   debug!("start");
@@ -192,7 +192,7 @@ fn main() -> ! {
     statemachine.on_change().map(|state| {
       on_state_change(&state, &mut clock, &mut display);
     });
-    display.draw();
+    display.render();
     
   }
 }
