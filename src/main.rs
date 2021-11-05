@@ -43,6 +43,8 @@ use display::{Display};
 mod midi;
 use midi::{MidiMessage};
 
+mod st7066;
+
 // When a panic occurs, stop the microcontroller
 #[allow(unused_imports)]
 use panic_halt;

@@ -40,7 +40,8 @@ Only connect TX to A9, RX to A10 and GND, no need for 3.3V connection
 
 ### HD44780 Display
 
-![](images/lcd_interface.jpeg)
+datasheet st7066: https://www.sparkfun.com/datasheets/LCD/st7066.pdf
+pinout: https://cdn-reichelt.de/documents/datenblatt/A500/DIPS082E.pdf
 
 ### BOM
 

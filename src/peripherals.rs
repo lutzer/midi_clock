@@ -16,7 +16,7 @@ use crate::encoder::*;
 
 use stm32f1xx_hal::pac::{USART1, USART2};
 
-pub use embedded_hal::digital::v2::{OutputPin, InputPin};
+use embedded_hal::digital::v2::{OutputPin, InputPin};
 
 // types for Initialized peripherals
 pub type Trigger1Gpio = gpio::gpiob::PB5<gpio::Output<gpio::PushPull>>;
