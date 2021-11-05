@@ -67,29 +67,31 @@ impl<
 
   // sends initializing commands for 4bit operation and 2 row display
   pub fn init(&mut self) {
-    self.delay.delay_ms(200u16);
+    self.delay.delay_ms(1000u16);
 
     // init display
     self.write_4bits(0x3);
     self.delay.delay_ms(5u8);
 
     self.write_4bits(0x3);
-    self.delay.delay_ms(1u8);
+    self.delay.delay_ms(5u8);
 
     self.write_4bits(0x3);
     self.write_4bits(0x2);
+
+    self.delay.delay_us(100u8);
   
     //function set 0b001D_NFxx and font size D = 0 (4bit), N = 1 (2rows), F = 0 (font1)
-    self.write_command(0b0010_1100, false);
-    
-    // display clear
-    self.write_command(0x01, false);
+    self.write_command(0b0010_1000, false);
+
+    // display on, 0b0000_1DCB D=1 (on), C=1 (cursor), B=1 (blink)
+    self.write_command(0b0000_1100, false);
 
     //entry mode, 0b0000_01IS, I=1 (increment), S = 1 (shift)
     self.write_command(0b0000_0110, false);
-    
-    //display on, 0b0000_1DCB D=1 (on), C=1 (cursor), B=1 (blink)
-    self.write_command(0b0000_1100, false);
+
+    self.clear();
+
 
     self.write_char('i' as u8);
     self.write_char('n' as u8);
@@ -99,10 +101,12 @@ impl<
 
   pub fn clear(&mut self) {
     self.write_command(0x01, false);
+    self.delay.delay_ms(2u8);
   }
 
   pub fn return_home(&mut self) {
     self.write_command(0x02, false);
+    self.delay.delay_ms(2u8);
   }
 
   pub fn write_char(&mut self, c: u8) {
@@ -122,7 +126,6 @@ impl<
       self.bus.rs.set_low().ok();
     }
     self.data_mode = enable;
-    self.delay.delay_ms(2u8);
   }
   
   fn write_command(&mut self, cmd: u8, is_data: bool) {
@@ -164,10 +167,12 @@ impl<
   
     // pulse en
     self.bus.en.set_low().ok();
-    self.delay.delay_us(40u8);
+    self.delay.delay_us(1u8);
     self.bus.en.set_high().ok();
-    self.delay.delay_us(40u8);
+    self.delay.delay_us(1u8);
     self.bus.en.set_low().ok();
+
+    self.delay.delay_us(37u8);
   }
 
 }
