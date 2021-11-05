@@ -28,7 +28,6 @@ impl SerialWriter {
       2 => return self.serial2.write(byte),
       _ => return Ok(())
     }
-    
   }
 
   pub fn write_str(&mut self, uart: u8, str: &str) -> nb::Result<(), Infallible> {

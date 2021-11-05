@@ -28,11 +28,11 @@
 | PB6 |EEPROM IC SCL|
 | PB7 |EEPROM IC SDA|
 | PA8 |Display RS|
-| PB15 |Display E|
-| PB14 |Display D0|
-| PB10 |Display D1|
-| PA4 |Display D2|
-| PA5 |Display D3|
+| PB15 |Display EN|
+| PB11 |Display D4|
+| PB10 |Display D5|
+| PA4 |Display D6|
+| PA5 |Display D7|
 
 ### Debugging with UART Adapter
 

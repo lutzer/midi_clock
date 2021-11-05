@@ -1,5 +1,5 @@
 /*
- * Initializes all used peripherals on the stm32
+ * Initializes all used peripherals on the stm32f103
  */
 
 use stm32f1xx_hal::{
@@ -9,12 +9,6 @@ use stm32f1xx_hal::{
   afio,
   serial::{Serial, Config},
   delay::{Delay}
-};
-
-use embedded_hal::spi::{Mode, Phase, Polarity};
-pub const SPI_MODE: Mode = Mode {
-    phase: Phase::CaptureOnSecondTransition,
-    polarity: Polarity::IdleHigh,
 };
 
 use crate::timers::*;
@@ -37,8 +31,8 @@ pub type Button4Gpio = gpio::gpioa::PA6<gpio::Input<gpio::PullUp>>;
 
 pub struct DisplayPins {
   pub rs: gpio::gpioa::PA8<gpio::Output<gpio::PushPull>>,
-  pub enable: gpio::gpiob::PB15<gpio::Output<gpio::PushPull>>,
-  pub d4: gpio::gpiob::PB14<gpio::Output<gpio::PushPull>>,
+  pub en: gpio::gpiob::PB15<gpio::Output<gpio::PushPull>>,
+  pub d4: gpio::gpiob::PB11<gpio::Output<gpio::PushPull>>,
   pub d5: gpio::gpiob::PB10<gpio::Output<gpio::PushPull>>,
   pub d6: gpio::gpioa::PA4<gpio::Output<gpio::PushPull>>,
   pub d7: gpio::gpioa::PA5<gpio::Output<gpio::PushPull>>,
@@ -120,7 +114,7 @@ impl Peripherals {
       usart1: Peripherals::init_usart1(dp.USART1, gpioa.pa9, gpioa.pa10, &mut gpioa.crh, &mut afio, &clocks, &mut apb2),
       usart2: Peripherals::init_usart2(dp.USART2, gpioa.pa2, gpioa.pa3, &mut gpioa.crl, &mut afio, &clocks, &mut apb1),
       
-      display: Peripherals::init_display(gpioa.pa8, gpiob.pb15, gpiob.pb14, gpiob.pb10, 
+      display: Peripherals::init_display(gpioa.pa8, gpiob.pb15, gpiob.pb11, gpiob.pb10, 
         gpioa.pa4, gpioa.pa5, &mut gpiob.crh, &mut gpioa.crh, &mut gpioa.crl, delay)
     };
   }
@@ -242,7 +236,7 @@ impl Peripherals {
   fn init_display(
     pa8: gpio::gpioa::PA8<gpio::Input<gpio::Floating>>,
     pb15: gpio::gpiob::PB15<gpio::Input<gpio::Floating>>,
-    pb14: gpio::gpiob::PB14<gpio::Input<gpio::Floating>>,
+    pb11: gpio::gpiob::PB11<gpio::Input<gpio::Floating>>,
     pb10: gpio::gpiob::PB10<gpio::Input<gpio::Floating>>,
     pa4: gpio::gpioa::PA4<gpio::Input<gpio::Floating>>,
     pa5: gpio::gpioa::PA5<gpio::Input<gpio::Floating>>,
@@ -254,8 +248,8 @@ impl Peripherals {
 
     let display: DisplayPins = DisplayPins{
       rs: pa8.into_push_pull_output(crha),
-      enable: pb15.into_push_pull_output(crhb),
-      d4: pb14.into_push_pull_output(crhb),
+      en: pb15.into_push_pull_output(crhb),
+      d4: pb11.into_push_pull_output(crhb),
       d5: pb10.into_push_pull_output(crhb),
       d6: pa4.into_push_pull_output(crla),
       d7: pa5.into_push_pull_output(crla),
