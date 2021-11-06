@@ -36,18 +36,19 @@ const MULTIPLIERS: [u8;8] = [1,2,3,4,6,8,12,24];
 const BAR_LENGTHS_RANGE: (u8,u8) = (1,15);
 
 impl Statemachine {
-  pub fn new() -> Statemachine {
+  pub fn new(state: Option<State>) -> Statemachine {
     // set initial state
     return Statemachine { 
-      state : State {
-        bpm: 120,
-        clock_trigger_multiplier: 4,
-        clock_divisions: [1,4],
-        clock_bar_length: 4,
-        clock_sync: false,
-        clock_source: ClockSource::Internal,
-        running: RunState::RUNNING
-      },
+      state : state.unwrap_or( 
+        State {
+          bpm: 120,
+          clock_trigger_multiplier: 4,
+          clock_divisions: [1,4],
+          clock_bar_length: 4,
+          clock_sync: false,
+          clock_source: ClockSource::Internal,
+          running: RunState::RUNNING
+      }),
       changed: true
     }
   }

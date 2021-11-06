@@ -172,7 +172,7 @@ impl<
     self.delay.delay_us(1u8);
     self.bus.en.set_low().ok();
 
-    self.delay.delay_us(37u8);
+    self.delay.delay_us(40u8);
   }
 
 }

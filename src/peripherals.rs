@@ -8,7 +8,8 @@ use stm32f1xx_hal::{
   gpio,
   afio,
   serial::{Serial, Config},
-  delay::{Delay}
+  delay::{Delay},
+  i2c::{BlockingI2c, DutyCycle, Mode}
 };
 
 use crate::timers::*;
@@ -35,9 +36,12 @@ pub struct DisplayPins {
   pub d4: gpio::gpiob::PB11<gpio::Output<gpio::PushPull>>,
   pub d5: gpio::gpiob::PB10<gpio::Output<gpio::PushPull>>,
   pub d6: gpio::gpioa::PA4<gpio::Output<gpio::PushPull>>,
-  pub d7: gpio::gpioa::PA5<gpio::Output<gpio::PushPull>>,
-  pub delay: Delay
+  pub d7: gpio::gpioa::PA5<gpio::Output<gpio::PushPull>>
 }
+
+pub type I2c1Port = BlockingI2c<pac::I2C1, (
+  gpio::gpiob::PB6<gpio::Alternate<gpio::OpenDrain>>,
+  gpio::gpiob::PB7<gpio::Alternate<gpio::OpenDrain>>)>;
 
 
 pub type Usart1Serial = Serial<
@@ -60,7 +64,9 @@ pub struct Peripherals {
   pub button4: Option<Button4Gpio>,
   pub usart1: Option<Usart1Serial>,
   pub usart2: Option<Usart2Serial>,
-  pub display: Option<DisplayPins>
+  pub display: Option<DisplayPins>,
+  pub i2c1: Option<I2c1Port>,
+  pub delay: Option<Delay>
 }
 
 impl Peripherals {
@@ -115,7 +121,12 @@ impl Peripherals {
       usart2: Peripherals::init_usart2(dp.USART2, gpioa.pa2, gpioa.pa3, &mut gpioa.crl, &mut afio, &clocks, &mut apb1),
       
       display: Peripherals::init_display(gpioa.pa8, gpiob.pb15, gpiob.pb11, gpiob.pb10, 
-        gpioa.pa4, gpioa.pa5, &mut gpiob.crh, &mut gpioa.crh, &mut gpioa.crl, delay)
+        gpioa.pa4, gpioa.pa5, &mut gpiob.crh, &mut gpioa.crh, &mut gpioa.crl),
+
+      i2c1: Peripherals::init_i2c1(dp.I2C1, gpiob.pb6, gpiob.pb7, &mut gpiob.crl, 
+        &mut afio, &clocks, &mut apb1),
+
+      delay: Some(delay)
     };
   }
 
@@ -242,8 +253,7 @@ impl Peripherals {
     pa5: gpio::gpioa::PA5<gpio::Input<gpio::Floating>>,
     crhb: &mut gpio::gpiob::CRH,
     crha: &mut gpio::gpioa::CRH,
-    crla: &mut gpio::gpioa::CRL,
-    delay: Delay
+    crla: &mut gpio::gpioa::CRL
   ) -> Option<DisplayPins> {
 
     let display: DisplayPins = DisplayPins{
@@ -252,10 +262,40 @@ impl Peripherals {
       d4: pb11.into_push_pull_output(crhb),
       d5: pb10.into_push_pull_output(crhb),
       d6: pa4.into_push_pull_output(crla),
-      d7: pa5.into_push_pull_output(crla),
-      delay: delay
+      d7: pa5.into_push_pull_output(crla)
     };
 
     return Some(display);
+  }
+
+  fn init_i2c1(
+    i2c: pac::I2C1,
+    pb6: gpio::gpiob::PB6<gpio::Input<gpio::Floating>>,
+    pb7: gpio::gpiob::PB7<gpio::Input<gpio::Floating>>,
+    crl: &mut gpio::gpiob::CRL,
+    afio: &mut afio::Parts,
+    clocks: &stm32f1xx_hal::rcc::Clocks,
+    apb1: &mut stm32f1xx_hal::rcc::APB1
+  ) -> Option<I2c1Port> {
+    // init i2c
+    let scl = pb6.into_alternate_open_drain(crl);
+    let sda = pb7.into_alternate_open_drain(crl);
+
+    let i2c = BlockingI2c::i2c1(
+      i2c,
+      (scl, sda),
+      &mut afio.mapr,
+      Mode::Fast {
+          frequency: 100_000.hz(),
+          duty_cycle: DutyCycle::Ratio16to9,
+      },
+      *clocks,
+      apb1,
+      100, // start timeout
+      5, // start retries
+      100, // addr timeout
+      100 // data timeout
+     );
+     return Some(i2c);
   }
 }

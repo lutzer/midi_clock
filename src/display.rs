@@ -1,5 +1,9 @@
 use core::sync::atomic::{AtomicBool, Ordering};
-use stm32f1xx_hal::{gpio};
+use stm32f1xx_hal::{
+  delay::{Delay},
+  {gpio}
+};
+
 use crate::peripherals::{DisplayPins};
 use crate::statemachine::{State};
 use crate::utils::{u16_to_string};
@@ -27,9 +31,9 @@ pub struct Display {
 
 impl Display {
 
-  pub fn new(pins: DisplayPins) -> Display {
+  pub fn new(pins: DisplayPins, delay: Delay) -> Display {
 
-    let lcd = ST7066::new(pins.rs, pins.en, pins.d4, pins.d5, pins.d6, pins.d7, pins.delay);
+    let lcd = ST7066::new(pins.rs, pins.en, pins.d4, pins.d5, pins.d6, pins.d7, delay);
 
     return Display {
       lcd: lcd,

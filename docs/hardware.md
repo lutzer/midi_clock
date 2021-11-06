@@ -43,6 +43,10 @@ Only connect TX to A9, RX to A10 and GND, no need for 3.3V connection
 datasheet st7066: https://www.sparkfun.com/datasheets/LCD/st7066.pdf
 pinout: https://cdn-reichelt.de/documents/datenblatt/A500/DIPS082E.pdf
 
+### Eeprom
+
+datasheet 24LC64: http://ww1.microchip.com/downloads/en/devicedoc/21189f.pdf
+
 ### BOM
 
 * Hex Buffer: 74HC 365

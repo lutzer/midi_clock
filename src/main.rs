@@ -1,10 +1,11 @@
 #![no_std]
 #![no_main]
-#![feature(alloc_error_handler)]
 
 use cortex_m_rt::entry;
 use cortex_m::interrupt;
 use cortex_m::interrupt::{CriticalSection};
+
+use core::panic::PanicInfo;
 
 mod peripherals;
 use peripherals::{Peripherals};
@@ -45,9 +46,11 @@ use midi::{MidiMessage};
 
 mod st7066;
 
-// When a panic occurs, stop the microcontroller
-#[allow(unused_imports)]
-use panic_halt;
+mod eeprom;
+use eeprom::{Eeprom};
+
+mod memory;
+use memory::{Memory};
 
 // holds vars that need to be globally available
 pub static CONTEXT: CSContext = CS_CONTEXT_INIT;
@@ -142,12 +145,18 @@ fn on_clock_tick(trigger_ticks: u8, midi_tick: [bool;2], cs: &CriticalSection) {
 
 #[entry]
 fn main() -> ! {
-  // initialize statemachine
-  let mut statemachine = Statemachine::new();
-  let initial_state = statemachine.get_state();
 
   // initialize peripherals
   let peripherals = Peripherals::init();
+
+
+  // init eeprom memory
+  let mut memory = Memory::new(Eeprom::new(peripherals.i2c1.unwrap()));
+
+  let initial_state = memory.load_state();
+  // initialize statemachine
+  let mut statemachine = Statemachine::new(initial_state);
+  let initial_state = statemachine.get_state();
 
   let buttons = Buttons::new(peripherals.button1.unwrap(), peripherals.button2.unwrap(), 
     peripherals.button3.unwrap(), peripherals.button4.unwrap());
@@ -176,12 +185,10 @@ fn main() -> ! {
   }
 
   // setup display
-  let mut display = Display::new(peripherals.display.unwrap());
+  let mut display = Display::new(peripherals.display.unwrap(), peripherals.delay.unwrap());
   Timer3::add_handler(1, Display::on_timer_tick);
   display.init();
   display.update(&initial_state);
-
-  debug!("start");
   
   // main loop
   loop {
@@ -193,8 +200,20 @@ fn main() -> ! {
     });
     statemachine.on_change().map(|state| {
       on_state_change(&state, &mut clock, &mut display);
+      memory.write_state(&state).ok();
     });
     display.render();
     
   }
+}
+
+// Call this function when panic occurs
+#[panic_handler]
+fn panic(info: &PanicInfo) -> ! {
+  debug!("PANIC");
+  if let Some(s) = info.payload().downcast_ref::<&str>() {
+    debug!(*s);
+  }
+  
+  loop {}
 }
