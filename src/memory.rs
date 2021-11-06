@@ -5,7 +5,6 @@ const BPM_ADDRESS: u16 = 0x0004;
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum MemoryError {
-  WriteError,
   ReadError
 }
 
@@ -21,9 +20,9 @@ impl Memory {
   }
 
   pub fn load_state(&mut self) -> Option<State> {
-    let bpm = self.eeprom.read_byte(BPM_ADDRESS).unwrap();
+    let bpm = self.eeprom.read_u16(BPM_ADDRESS).unwrap();
     return Some(State {
-      bpm: bpm as u16,
+      bpm: bpm,
       clock_trigger_multiplier: 4,
       clock_divisions: [1,4],
       clock_bar_length: 4,
@@ -34,6 +33,6 @@ impl Memory {
   }
 
   pub fn write_state(&mut self, state: &State) -> Result<(), MemoryError> {
-    return self.eeprom.write_byte(BPM_ADDRESS, state.bpm as u8).map_err(|e| MemoryError::ReadError);
+    return self.eeprom.write_u16(BPM_ADDRESS, state.bpm).map_err(|e| MemoryError::ReadError);
   }
 }

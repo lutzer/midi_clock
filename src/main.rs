@@ -149,13 +149,11 @@ fn main() -> ! {
   // initialize peripherals
   let peripherals = Peripherals::init();
 
-
   // init eeprom memory
   let mut memory = Memory::new(Eeprom::new(peripherals.i2c1.unwrap()));
 
-  let initial_state = memory.load_state();
   // initialize statemachine
-  let mut statemachine = Statemachine::new(initial_state);
+  let mut statemachine = Statemachine::new(memory.load_state());
   let initial_state = statemachine.get_state();
 
   let buttons = Buttons::new(peripherals.button1.unwrap(), peripherals.button2.unwrap(), 
@@ -189,6 +187,8 @@ fn main() -> ! {
   Timer3::add_handler(1, Display::on_timer_tick);
   display.init();
   display.update(&initial_state);
+
+  debug!("start");
   
   // main loop
   loop {
