@@ -22,7 +22,6 @@ use timers::{Timer3};
 mod debug;
 
 mod utils;
-use utils::{u16_to_string};
 
 mod encoder;
 use encoder::{Encoder};
@@ -31,10 +30,10 @@ mod clock;
 use clock::{Clock};
 
 mod triggers;
-use triggers::{Triggers};
+use triggers::{Triggers, TRIGGER4_MASK};
 
 mod statemachine;
-use statemachine::{Statemachine, State};
+use statemachine::{Statemachine, State, RunState};
 
 mod context;
 use context::{Context, CONTEXT};
@@ -43,7 +42,7 @@ mod display;
 use display::{Display};
 
 mod midi;
-use midi::{send_midi_ctrl_msg};
+use midi::{MidiMessage};
 
 mod st7066;
 
@@ -82,7 +81,7 @@ fn on_state_change(state: &State, clock: &mut Clock, display: &mut Display) {
     // check for state changes
     if prev_state.running != state.running {
       clock.set_runstate(state.running);
-      send_midi_ctrl_msg(state.running, prev_state.running);
+      send_midi_ctrl_msg(state.running);
     }
     if prev_state.bpm != state.bpm {
       clock.set_bpm(state.bpm);
@@ -104,25 +103,50 @@ fn on_state_change(state: &State, clock: &mut Clock, display: &mut Display) {
   unsafe { PREV_STATE = Some(*state) }
 }
 
+fn send_midi_ctrl_msg(current: RunState) {
+  interrupt::free(|cs| {
+    Context::get_instance(cs, &|ctx| {
+      match current {
+        RunState::RUNNING => { 
+          ctx.serial.write(2, MidiMessage::Continue as u8).ok(); 
+        },
+        RunState::PAUSED => { 
+          ctx.serial.write(2, MidiMessage::Stop as u8).ok(); 
+        },
+        RunState::STOPPING => { 
+          ctx.serial.write(2, MidiMessage::Stop as u8).ok(); 
+        },
+        RunState::STOPPED => { 
+          ctx.serial.write(2, MidiMessage::Start as u8).ok();
+          ctx.triggers.fire(TRIGGER4_MASK); // send sync reset trigger
+        }
+      }
+    });
+  });
+}
+
 #[entry]
 fn main() -> ! {
 
   // initialize peripherals
   let peripherals = Peripherals::init();
 
-  // init eeprom memory
+  // init eeprom memory chip
   let mut memory = Memory::new(Eeprom::new(peripherals.i2c1.unwrap()));
 
-  // initialize statemachine
+  // initialize statemachine and read state from memory
   let mut statemachine = Statemachine::new(memory.load_state());
   let initial_state = statemachine.get_state();
 
+  // initializes all buttons and sets debounce timer
   let buttons = Buttons::new(peripherals.button1.unwrap(), peripherals.button2.unwrap(), 
     peripherals.button3.unwrap(), peripherals.button4.unwrap());
   Timer3::add_handler(0, buttons_on_timer_tick);
 
+  // initialize clock, sends triggers and MIDI CLOCK msgs in regular intervals
   let mut clock = Clock::new(&initial_state);
   
+  // initialize rotary encoder
   let encoder = Encoder::new();
 
   // create global context to share peripherals among interrupts

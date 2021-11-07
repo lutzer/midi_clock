@@ -1,5 +1,5 @@
 use crate::eeprom::{Eeprom};
-use crate::statemachine::{State, ClockSource, RunState};
+use crate::statemachine::{State, ClockSource, RunState, DEFAULT_STATE};
 
 use crate::debug;
 
@@ -24,15 +24,9 @@ impl Memory {
   pub fn load_state(&mut self) -> Option<State> {
     debug!("load state");
     let bpm = self.eeprom.read_u16(BPM_ADDRESS).ok()?;
-    return Some(State {
-      bpm: bpm,
-      clock_trigger_multiplier: 4,
-      clock_divisions: [1,4],
-      clock_bar_length: 4,
-      clock_sync: false,
-      clock_source: ClockSource::Internal,
-      running: RunState::RUNNING
-    })
+    let mut state = DEFAULT_STATE;
+    state.bpm = bpm;
+    return Some(state);
   }
 
   pub fn write_state(&mut self, state: &State) -> Result<(), MemoryError> {

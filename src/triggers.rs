@@ -12,7 +12,7 @@ pub const TRIGGER2_MASK : u8 = 0b00000010;
 pub const TRIGGER3_MASK : u8 = 0b00000100;
 pub const TRIGGER4_MASK : u8 = 0b00001000;
 
-// stop pulse after 50ms
+// stop pulse after 5ms
 const TIMER_OVERFLOW_COUNT: u8 = 5;
 
 static TRIGGERS_STARTED: AtomicU8 = AtomicU8::new(0);

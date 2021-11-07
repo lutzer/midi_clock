@@ -29,6 +29,16 @@ pub struct Statemachine {
   changed: bool
 }
 
+pub const DEFAULT_STATE: State = State {
+  bpm: 120,
+  clock_trigger_multiplier: 4,
+  clock_divisions: [1,1],
+  clock_bar_length: 4,
+  clock_sync: false,
+  clock_source: ClockSource::Internal,
+  running: RunState::RUNNING
+};
+
 // define state constants
 const BPM_RANGE: (u16,u16) = (30, 320);
 const DIVISION_STEPS: [u8;10] = [1,2,3,4,5,6,7,8,16,32]; // largest common multiple is 33600
@@ -39,16 +49,7 @@ impl Statemachine {
   pub fn new(state: Option<State>) -> Statemachine {
     // set initial state
     return Statemachine { 
-      state : state.unwrap_or( 
-        State {
-          bpm: 120,
-          clock_trigger_multiplier: 4,
-          clock_divisions: [1,4],
-          clock_bar_length: 4,
-          clock_sync: false,
-          clock_source: ClockSource::Internal,
-          running: RunState::RUNNING
-      }),
+      state : state.unwrap_or(DEFAULT_STATE),
       changed: true
     }
   }
