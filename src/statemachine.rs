@@ -83,7 +83,11 @@ impl Statemachine {
   }
 
   pub fn button2_pressed(&mut self, pressed : bool) {
-    self.state.running = if pressed { RunState::STOPPING } else { RunState::STOPPED };
+    if pressed {
+      self.state.running = RunState::STOPPING
+    } else {
+      self.state.running = RunState::STOPPED
+    }
     self.changed = true;
   }
 

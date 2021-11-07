@@ -5,8 +5,10 @@ use stm32f1xx_hal::{
 };
 
 use crate::peripherals::{DisplayPins};
-use crate::statemachine::{State};
+use crate::statemachine::{State, RunState};
 use crate::utils::{u16_to_string};
+
+use crate::debug;
 
 use crate::st7066::ST7066;
 
@@ -54,13 +56,30 @@ impl Display {
   pub fn render(&mut self) {
     let update_time_arrived = UPDATE_TIME_ARRIVED.fetch_and(false, Ordering::Relaxed);
     if self.updated && update_time_arrived {
+      debug!("display render");
       let state = self.state.unwrap();
       self.lcd.clear();
+      
+      // write bpm
       let bpm = u16_to_string(state.bpm as u16);
       self.lcd.write_str("Bpm ");
       self.lcd.write_str(bpm);
+
+      //write run state
+      self.lcd.set_cursor((0,1));
+      match state.running {
+        RunState::RUNNING => self.lcd.write_str("running"),
+        RunState::PAUSED => self.lcd.write_str("paused"),
+        _ => self.lcd.write_str("stopped")
+      }
+
       self.updated = false; 
     } 
+  }
+
+  pub fn print(&mut self, text: &str) {
+    self.lcd.clear();
+    self.lcd.write_str(text);
   }
 
   pub unsafe fn on_timer_tick() {

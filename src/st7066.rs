@@ -30,7 +30,8 @@ pub struct ST7066<
 > {
   bus: ST7066Bus<RS,EN,D4,D5,D6,D7>,
   delay: Delay,
-  data_mode: bool
+  data_mode: bool,
+  current_position: u8
 }
 
 impl<
@@ -62,6 +63,7 @@ impl<
       bus: bus,
       delay: delay,
       data_mode: false,
+      current_position: 0
     }
   }
 
@@ -98,19 +100,32 @@ impl<
   pub fn clear(&mut self) {
     self.write_command(0x01, false);
     self.delay.delay_ms(2u8);
+
+    self.current_position = 0;
   }
 
   pub fn return_home(&mut self) {
     self.write_command(0x02, false);
     self.delay.delay_ms(2u8);
+
+    self.current_position = 0;
   }
 
   pub fn write_char(&mut self, c: u8) {
     self.write_command(c, true);
+
+    self.current_position += 1;
   }
 
   pub fn write_str(&mut self, text: &str) {
     text.bytes().map(|c| self.write_char(c as u8)).last();
+
+    self.current_position += text.len() as u8;
+  }
+
+  pub fn set_cursor(&mut self, position: (u8,u8)) {
+    let cmd = 0b0010000000 | position.0 + position.1 * 40;
+    self.write_command(cmd, false);
   }
 
   fn set_data_write_mode(&mut self, enable: bool) {

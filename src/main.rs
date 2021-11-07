@@ -22,6 +22,7 @@ use timers::{Timer3};
 mod debug;
 
 mod utils;
+use utils::{u16_to_string};
 
 mod encoder;
 use encoder::{Encoder};
@@ -30,19 +31,19 @@ mod clock;
 use clock::{Clock};
 
 mod triggers;
-use triggers::{Triggers, TRIGGER4_MASK};
+use triggers::{Triggers};
 
 mod statemachine;
-use statemachine::{Statemachine, State, RunState};
+use statemachine::{Statemachine, State};
 
 mod context;
-use context::{Context, CSContext, CS_CONTEXT_INIT};
+use context::{Context, CONTEXT};
 
 mod display;
 use display::{Display};
 
 mod midi;
-use midi::{MidiMessage};
+use midi::{send_midi_ctrl_msg};
 
 mod st7066;
 
@@ -51,9 +52,6 @@ use eeprom::{Eeprom};
 
 mod memory;
 use memory::{Memory};
-
-// holds vars that need to be globally available
-pub static CONTEXT: CSContext = CS_CONTEXT_INIT;
 
 fn on_button_press(statemachine: &mut Statemachine, changes: u8, state: u8) {
   if (changes & BUTTON1_MASK) > 0 {
@@ -88,7 +86,6 @@ fn on_state_change(state: &State, clock: &mut Clock, display: &mut Display) {
     }
     if prev_state.bpm != state.bpm {
       clock.set_bpm(state.bpm);
-      display.update(state);
     }
     if prev_state.clock_trigger_multiplier != state.clock_trigger_multiplier {
       clock.set_trigger_multiplier(state.clock_trigger_multiplier);
@@ -102,45 +99,9 @@ fn on_state_change(state: &State, clock: &mut Clock, display: &mut Display) {
     if prev_state.clock_sync != state.clock_sync {
       clock.sync(state.clock_sync);
     }
+    display.update(state);
   }
   unsafe { PREV_STATE = Some(*state) }
-}
-
-fn send_midi_ctrl_msg(current: RunState, _: RunState) {
-  interrupt::free(|cs| {
-    let mut context = CONTEXT.borrow(cs).borrow_mut();
-    context.as_mut().map(|ctx| {
-      match current {
-        RunState::RUNNING => { 
-          ctx.serial.write(2, MidiMessage::Continue as u8).ok(); 
-        },
-        RunState::PAUSED => { 
-          ctx.serial.write(2, MidiMessage::Stop as u8).ok(); 
-        },
-        RunState::STOPPING => { 
-          ctx.serial.write(2, MidiMessage::Stop as u8).ok(); 
-        },
-        RunState::STOPPED => { 
-          ctx.serial.write(2, MidiMessage::Start as u8).ok();
-          ctx.triggers.fire(TRIGGER4_MASK);
-        }
-      }
-    });
-  });
-}
-
-fn on_clock_tick(trigger_ticks: u8, midi_tick: [bool;2], cs: &CriticalSection) {
-  let mut context = CONTEXT.borrow(cs).borrow_mut();
-  context.as_mut().map(|ctx| {
-    if midi_tick[0] {
-      #[cfg(not(feature = "debug"))]
-      ctx.serial.write(1, MidiMessage::TimingClock as u8).ok();
-    }
-    if midi_tick[1] {
-      ctx.serial.write(2, MidiMessage::TimingClock as u8).ok();
-    }
-    ctx.triggers.fire(trigger_ticks);
-  });
 }
 
 #[entry]
@@ -161,7 +122,6 @@ fn main() -> ! {
   Timer3::add_handler(0, buttons_on_timer_tick);
 
   let mut clock = Clock::new(&initial_state);
-  clock.on_tick(on_clock_tick);
   
   let encoder = Encoder::new();
 
@@ -203,7 +163,6 @@ fn main() -> ! {
       // memory.write_state(&state).ok();
     });
     display.render();
-    
   }
 }
 

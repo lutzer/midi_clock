@@ -1,8 +1,9 @@
 use core::sync::atomic::{AtomicU32, Ordering};
 use cortex_m::interrupt::{ CriticalSection };
-use cortex_m::interrupt;
 
-use crate::utils::{CSCell};
+use crate::context::{Context};
+use crate::midi::{MidiMessage};
+
 use crate::statemachine::{State, RunState};
 use crate::triggers::{TRIGGER3_MASK, TRIGGER4_MASK};
 
@@ -16,7 +17,6 @@ type ClockTickHandler = fn(u8, [bool;2], &CriticalSection);
 
 const CLOCK_TICKS_PER_QUARTER_NOTE: u32 = 24;
 
-static CLOCK_TICK_HANDLER: CSCell<Option<ClockTickHandler>> = CSCell::new(None);
 static CLOCK_TICK_SETTINGS: AtomicU32 = AtomicU32::new(0);
 
 struct ClockSettings {
@@ -125,10 +125,6 @@ impl Clock {
     }
   }
 
-  pub fn on_tick<'a>(&self, cb: ClockTickHandler) {
-    interrupt::free( |cs| CLOCK_TICK_HANDLER.set(Some(cb), cs) );
-  }
-
   pub unsafe fn on_timer_tick(cs : &CriticalSection) {
     static mut OVERFLOWS : u32 = 0;
     static mut SYNC : bool = false;
@@ -164,9 +160,23 @@ impl Clock {
       triggers |= TRIGGER4_MASK;
     }
 
-    CLOCK_TICK_HANDLER.get(cs).map(|f| f(triggers, midi_outs, cs) ); 
+    on_clock_tick(triggers, midi_outs, cs); 
 
     // reset overflows when reached largest common multiple of all possible divisors and 24
     OVERFLOWS = (OVERFLOWS + 1) % 806400; 
   }
+}
+
+pub fn on_clock_tick(trigger_ticks: u8, midi_tick: [bool;2], cs: &CriticalSection) {
+
+  Context::get_instance(cs, &|ctx| {
+    if midi_tick[0] {
+      #[cfg(not(feature = "debug"))]
+      ctx.serial.write(1, MidiMessage::TimingClock as u8).ok();
+    }
+    if midi_tick[1] {
+      ctx.serial.write(2, MidiMessage::TimingClock as u8).ok();
+    }
+    ctx.triggers.fire(trigger_ticks);
+  });
 }

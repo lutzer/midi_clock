@@ -14,6 +14,10 @@ pub struct SerialWriter {
   serial2: Usart2Serial
 }
 
+pub enum SerialError {
+  ReadError
+}
+
 impl SerialWriter {
   pub fn new(serial1: Usart1Serial, serial2: Usart2Serial) -> SerialWriter {
     return SerialWriter {
@@ -33,5 +37,10 @@ impl SerialWriter {
   pub fn write_str(&mut self, uart: u8, str: &str) -> nb::Result<(), Infallible> {
     let _ = str.bytes().map(|c| nb::block!(self.write(uart, c))).last();
     Ok(())
+  }
+
+  pub fn read(&mut self, uart: u8) -> Result<u8,SerialError> {
+    let b = nb::block!(self.serial1.read());
+    return b.map_err(|e| SerialError::ReadError);
   }
 }
