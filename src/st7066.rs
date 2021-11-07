@@ -67,7 +67,7 @@ impl<
 
   // sends initializing commands for 4bit operation and 2 row display
   pub fn init(&mut self) {
-    self.delay.delay_ms(1000u16);
+    self.delay.delay_ms(200u16);
 
     // init display
     self.write_4bits(0x3);
@@ -92,11 +92,7 @@ impl<
 
     self.clear();
 
-
-    self.write_char('i' as u8);
-    self.write_char('n' as u8);
-    self.write_char('i' as u8);
-    self.write_char('t' as u8);
+    self.write_str("starting");
   }
 
   pub fn clear(&mut self) {

@@ -14,7 +14,7 @@ mod serial;
 use serial::{SerialWriter};
 
 mod buttons;
-use buttons::{Buttons, BUTTON1_MASK, BUTTON2_MASK, BUTTON3_MASK, BUTTON4_MASK};
+use buttons::{Buttons, BUTTON1_MASK, BUTTON2_MASK, BUTTON3_MASK, BUTTON4_MASK, buttons_on_timer_tick};
 
 mod timers;
 use timers::{Timer3};
@@ -158,7 +158,7 @@ fn main() -> ! {
 
   let buttons = Buttons::new(peripherals.button1.unwrap(), peripherals.button2.unwrap(), 
     peripherals.button3.unwrap(), peripherals.button4.unwrap());
-  Timer3::add_handler(0, Buttons::on_timer_tick);
+  Timer3::add_handler(0, buttons_on_timer_tick);
 
   let mut clock = Clock::new(&initial_state);
   clock.on_tick(on_clock_tick);
@@ -200,7 +200,7 @@ fn main() -> ! {
     });
     statemachine.on_change().map(|state| {
       on_state_change(&state, &mut clock, &mut display);
-      memory.write_state(&state).ok();
+      // memory.write_state(&state).ok();
     });
     display.render();
     

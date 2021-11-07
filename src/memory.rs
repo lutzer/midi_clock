@@ -1,6 +1,8 @@
 use crate::eeprom::{Eeprom};
 use crate::statemachine::{State, ClockSource, RunState};
 
+use crate::debug;
+
 const BPM_ADDRESS: u16 = 0x0004;
 
 #[derive(Debug, Eq, PartialEq)]
@@ -20,7 +22,8 @@ impl Memory {
   }
 
   pub fn load_state(&mut self) -> Option<State> {
-    let bpm = self.eeprom.read_u16(BPM_ADDRESS).unwrap();
+    debug!("load state");
+    let bpm = self.eeprom.read_u16(BPM_ADDRESS).ok()?;
     return Some(State {
       bpm: bpm,
       clock_trigger_multiplier: 4,
@@ -33,6 +36,7 @@ impl Memory {
   }
 
   pub fn write_state(&mut self, state: &State) -> Result<(), MemoryError> {
-    return self.eeprom.write_u16(BPM_ADDRESS, state.bpm).map_err(|e| MemoryError::ReadError);
+    debug!("store state");
+    return self.eeprom.write_u16(BPM_ADDRESS, state.bpm).map_err(|_| MemoryError::ReadError);
   }
 }
