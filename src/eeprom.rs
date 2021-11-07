@@ -1,10 +1,7 @@
 use crate::peripherals::{I2c1Port};
 
-use crate::debug;
-
 use cortex_m::prelude::{
-  _embedded_hal_blocking_i2c_Write, 
-  _embedded_hal_blocking_i2c_Read, 
+  _embedded_hal_blocking_i2c_Write,
   _embedded_hal_blocking_i2c_WriteRead
 };
 
