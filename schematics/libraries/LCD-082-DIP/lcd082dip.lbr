@@ -78,8 +78,6 @@
 <wire x1="19.49" y1="10" x2="19.49" y2="-10" width="0.127" layer="21"/>
 <wire x1="19.49" y1="-10" x2="-20.51" y2="-10" width="0.127" layer="21"/>
 <wire x1="-20.51" y1="-10" x2="-20.51" y2="10" width="0.127" layer="21"/>
-<dimension x1="-20.51" y1="-10" x2="19.49" y2="-10" x3="-0.51" y3="-16" textsize="1.27" layer="47"/>
-<dimension x1="19.49" y1="10" x2="19.49" y2="-10" x3="22.49" y3="0" textsize="1.27" layer="47"/>
 <wire x1="-16.51" y1="0" x2="15.49" y2="0" width="0.127" layer="21"/>
 <pad name="7" x="-16.51" y="7.62" drill="1.016" shape="long"/>
 <pad name="6" x="-16.51" y="5.08" drill="1.016" shape="long"/>

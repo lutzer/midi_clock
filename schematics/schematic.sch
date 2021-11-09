@@ -870,6 +870,7 @@
 <pad name="P$3" x="-5.08" y="0" drill="1.7144" diameter="1.9304"/>
 <pad name="P$4" x="5.08" y="0" drill="1.7144" diameter="1.9304"/>
 <hole x="0" y="0" drill="4.0004"/>
+<text x="-7.62" y="7.62" size="1.27" layer="21">&gt;NAME</text>
 </package>
 </packages>
 <symbols>
@@ -20530,8 +20531,6 @@ Source: http://www.lumberg.com/Produkte/PDFs/1503_09.pdf</description>
 <wire x1="19.49" y1="10" x2="19.49" y2="-10" width="0.127" layer="21"/>
 <wire x1="19.49" y1="-10" x2="-20.51" y2="-10" width="0.127" layer="21"/>
 <wire x1="-20.51" y1="-10" x2="-20.51" y2="10" width="0.127" layer="21"/>
-<dimension x1="-20.51" y1="-10" x2="19.49" y2="-10" x3="-0.51" y3="-16" textsize="1.27" layer="47"/>
-<dimension x1="19.49" y1="10" x2="19.49" y2="-10" x3="22.49" y3="0" textsize="1.27" layer="47"/>
 <wire x1="-16.51" y1="0" x2="15.49" y2="0" width="0.127" layer="21"/>
 <pad name="7" x="-16.51" y="7.62" drill="1.016" shape="long"/>
 <pad name="6" x="-16.51" y="5.08" drill="1.016" shape="long"/>
@@ -21301,14 +21300,6 @@ W = angled&lt;p&gt;
 <pinref part="X5" gate="G$1" pin="4"/>
 <pinref part="GND5" gate="1" pin="GND"/>
 <wire x1="-78.74" y1="30.48" x2="-78.74" y2="15.24" width="0.1524" layer="91"/>
-<wire x1="-78.74" y1="30.48" x2="-73.66" y2="30.48" width="0.1524" layer="91"/>
-<junction x="-78.74" y="30.48"/>
-<pinref part="X5" gate="G$1" pin="S1"/>
-<wire x1="-73.66" y1="30.48" x2="-73.66" y2="33.02" width="0.1524" layer="91"/>
-<wire x1="-73.66" y1="30.48" x2="-71.12" y2="30.48" width="0.1524" layer="91"/>
-<junction x="-73.66" y="30.48"/>
-<pinref part="X5" gate="G$1" pin="S2"/>
-<wire x1="-71.12" y1="30.48" x2="-71.12" y2="33.02" width="0.1524" layer="91"/>
 </segment>
 <segment>
 <pinref part="GND6" gate="1" pin="GND"/>

@@ -74,7 +74,7 @@
 <layer number="100" name="5V" color="13" fill="1" visible="yes" active="yes"/>
 </layers>
 <board>
-<fusionsync huburn="a.cGVyc29uYWw6dWUyOTRlZjhj" projecturn="a.cGVyc29uYWw6dWUyOTRlZjhjIzIwMTkwMTA1MTY4NDA4MjU2" f3durn="urn:adsk.wipprod:dm.lineage:Lq9hDvX_Sd6aCeZeqRCZkA" pcbguid="abaad317-76b8-409a-97c7-e120a538e6ae" lastpulledtime="" lastsyncedchangeguid="" latestrevisionid="7825f32e-bdc2-458f-9405-eec37679b984" lastsyncedrevisionid="7825f32e-bdc2-458f-9405-eec37679b984" lastboardhashguid="e4f4e491-0abb-39a3-c2ac-01114c3d0e76" lastpushedtime="2021-11-08T23:55:36Z" linktopcb3d="true"/>
+<fusionsync huburn="a.cGVyc29uYWw6dWUyOTRlZjhj" projecturn="a.cGVyc29uYWw6dWUyOTRlZjhjIzIwMTkwMTA1MTY4NDA4MjU2" f3durn="urn:adsk.wipprod:dm.lineage:Lq9hDvX_Sd6aCeZeqRCZkA" pcbguid="" lastpulledtime="" lastsyncedchangeguid="" latestrevisionid="7825f32e-bdc2-458f-9405-eec37679b984" lastsyncedrevisionid="7825f32e-bdc2-458f-9405-eec37679b984" lastboardhashguid="e4f4e491-0abb-39a3-c2ac-01114c3d0e76" lastpushedtime="2021-11-08T23:55:36Z" linktopcb3d="true"/>
 <plain>
 <wire x1="0" y1="0" x2="140" y2="0" width="0" layer="20"/>
 <wire x1="140" y1="0" x2="140" y2="100" width="0" layer="20"/>
@@ -181,6 +181,7 @@
 <pad name="P$3" x="-5.08" y="0" drill="1.7144" diameter="1.9304"/>
 <pad name="P$4" x="5.08" y="0" drill="1.7144" diameter="1.9304"/>
 <hole x="0" y="0" drill="4.0004"/>
+<text x="-7.62" y="7.62" size="1.27" layer="21">&gt;NAME</text>
 </package>
 </packages>
 </library>
@@ -1542,8 +1543,6 @@ EC12E series with push-on switch</description>
 <wire x1="19.49" y1="10" x2="19.49" y2="-10" width="0.127" layer="21"/>
 <wire x1="19.49" y1="-10" x2="-20.51" y2="-10" width="0.127" layer="21"/>
 <wire x1="-20.51" y1="-10" x2="-20.51" y2="10" width="0.127" layer="21"/>
-<dimension x1="-20.51" y1="-10" x2="19.49" y2="-10" x3="-0.51" y3="-16" textsize="1.27" layer="47"/>
-<dimension x1="19.49" y1="10" x2="19.49" y2="-10" x3="22.49" y3="0" textsize="1.27" layer="47"/>
 <wire x1="-16.51" y1="0" x2="15.49" y2="0" width="0.127" layer="21"/>
 <pad name="7" x="-16.51" y="7.62" drill="1.016" shape="long"/>
 <pad name="6" x="-16.51" y="5.08" drill="1.016" shape="long"/>
@@ -2564,8 +2563,6 @@ design rules under a new name.</description>
 <contactref element="R3" pad="1"/>
 <contactref element="R4" pad="1"/>
 <contactref element="X5" pad="4"/>
-<contactref element="X5" pad="S1"/>
-<contactref element="X5" pad="S2"/>
 <contactref element="M_OUT1" pad="P2"/>
 <contactref element="M_OUT2" pad="P2"/>
 <contactref element="M_OUT3" pad="P2"/>
@@ -2679,15 +2676,13 @@ design rules under a new name.</description>
 <wire x1="70.16" y1="44.84" x2="62.58" y2="52.42" width="0.8" layer="16"/>
 <wire x1="82" y1="54.705" x2="82" y2="54.63" width="0.4" layer="16"/>
 <wire x1="82" y1="54.63" x2="81.95" y2="54.58" width="0.4" layer="16"/>
-<wire x1="24.77" y1="97" x2="34.31" y2="97" width="0.8" layer="16"/>
+<wire x1="24.77" y1="97" x2="25" y2="97" width="0.8" layer="16"/>
+<wire x1="25" y1="97" x2="34.31" y2="97" width="0.8" layer="16"/>
 <wire x1="49.8" y1="77.15" x2="49.8" y2="85.02" width="0.4" layer="16"/>
 <wire x1="49.8" y1="85.02" x2="53.78" y2="89" width="0.4" layer="16"/>
 <wire x1="15.23" y1="87.46" x2="15.23" y2="88.46" width="0.8" layer="16"/>
-<wire x1="16.385" y1="89.615" x2="15.23" y2="88.46" width="0.8" layer="16"/>
-<wire x1="16.385" y1="89.615" x2="21.945" y2="89.615" width="0.8" layer="16"/>
-<wire x1="21.945" y1="89.615" x2="22.5" y2="90.17" width="0.8" layer="16"/>
-<wire x1="22.5" y1="90.17" x2="22.5" y2="94.73" width="0.8" layer="16"/>
-<wire x1="22.5" y1="94.73" x2="24.77" y2="97" width="0.8" layer="16"/>
+<wire x1="16.385" y1="89.615" x2="16.135" y2="89.365" width="0.8" layer="16"/>
+<wire x1="16.135" y1="89.365" x2="15.23" y2="88.46" width="0.8" layer="16"/>
 <wire x1="87.45" y1="42.3" x2="84.91" y2="44.84" width="0.4" layer="16"/>
 <wire x1="84.91" y1="44.84" x2="79.83" y2="44.84" width="0.4" layer="16"/>
 <wire x1="120.635" y1="84.055" x2="129" y2="75.69" width="0.8" layer="16"/>
@@ -2719,12 +2714,12 @@ design rules under a new name.</description>
 <wire x1="41.13" y1="95.26" x2="43.67" y2="95.26" width="0.8" layer="16"/>
 <wire x1="43.67" y1="95.26" x2="44.97" y2="93.96" width="0.8" layer="16"/>
 <wire x1="41.13" y1="87.64" x2="41.13" y2="95.26" width="0.8" layer="16"/>
-<wire x1="10.5" y1="90.13" x2="10.46" y2="90.17" width="0.8" layer="16"/>
-<wire x1="10.5" y1="87.5" x2="10.5" y2="90.13" width="0.8" layer="16"/>
 <wire x1="54.75" y1="39.08" x2="67.12305" y2="39.08" width="0.8" layer="16"/>
 <wire x1="67.12305" y1="39.08" x2="67.43" y2="38.77305" width="0.8" layer="16"/>
 <wire x1="104.56" y1="49.42" x2="100.5" y2="45.36" width="0.8" layer="16"/>
 <wire x1="100.5" y1="45.36" x2="100.5" y2="34" width="0.8" layer="16"/>
+<wire x1="16.385" y1="89.615" x2="23.77" y2="97" width="0.8" layer="16"/>
+<wire x1="23.77" y1="97" x2="24.77" y2="97" width="0.8" layer="16"/>
 </signal>
 <signal name="PB12">
 <contactref element="STM32F103" pad="P$1"/>
@@ -2757,11 +2752,11 @@ design rules under a new name.</description>
 <contactref element="BUTTON3" pad="SW1"/>
 <contactref element="STM32F103" pad="P$29"/>
 <wire x1="42.26" y1="54.705" x2="42.26" y2="51.24" width="0.4" layer="16"/>
-<wire x1="51" y1="42.5" x2="52.5" y2="42.5" width="0.4" layer="16"/>
-<wire x1="42.26" y1="51.24" x2="51" y2="42.5" width="0.4" layer="16"/>
-<via x="52.5" y="42.5" extent="1-16" drill="0.35"/>
-<wire x1="61.08" y1="36.23305" x2="54.81305" y2="42.5" width="0.4" layer="1"/>
-<wire x1="52.5" y1="42.5" x2="54.81305" y2="42.5" width="0.4" layer="1"/>
+<wire x1="50.5" y1="43" x2="52.5" y2="43" width="0.4" layer="16"/>
+<wire x1="42.26" y1="51.24" x2="50.5" y2="43" width="0.4" layer="16"/>
+<via x="52.5" y="43" extent="1-16" drill="0.35"/>
+<wire x1="61.08" y1="36.23305" x2="54.31305" y2="43" width="0.4" layer="1"/>
+<wire x1="52.5" y1="43" x2="54.31305" y2="43" width="0.4" layer="1"/>
 </signal>
 <signal name="N$4">
 <contactref element="LED1" pad="K"/>
