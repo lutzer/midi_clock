@@ -54,7 +54,7 @@
 <layer number="44" name="Drills" color="7" fill="1" visible="yes" active="yes"/>
 <layer number="45" name="Holes" color="7" fill="1" visible="yes" active="yes"/>
 <layer number="46" name="Milling" color="3" fill="1" visible="no" active="yes"/>
-<layer number="47" name="Measures" color="7" fill="1" visible="no" active="yes"/>
+<layer number="47" name="Measures" color="7" fill="1" visible="yes" active="yes"/>
 <layer number="48" name="Document" color="7" fill="1" visible="yes" active="yes"/>
 <layer number="49" name="Reference" color="7" fill="1" visible="yes" active="yes"/>
 <layer number="51" name="tDocu" color="7" fill="1" visible="yes" active="yes"/>
@@ -93,6 +93,9 @@
 <hole x="136" y="96" drill="3.4"/>
 <hole x="136" y="4" drill="3.4"/>
 <hole x="4" y="4" drill="3.4"/>
+<text x="17.5" y="42" size="1.778" layer="25">BUTTON1</text>
+<text x="37.5" y="42" size="1.778" layer="25">BUTTON2</text>
+<text x="57.5" y="42" size="1.778" layer="25">BUTTON3</text>
 </plain>
 <libraries>
 <library name="ic-package" urn="urn:adsk.eagle:library:239">
@@ -2244,7 +2247,7 @@ design rules under a new name.</description>
 <element name="CLOCK_IN" library="con-lumberg" library_urn="urn:adsk.eagle:library:163" package="1503_09" package3d_urn="urn:adsk.eagle:package:8555/1" value="1503_09" x="124.635" y="97.155" smashed="yes">
 <attribute name="MF" value="" x="200.835" y="76.835" size="1.778" layer="27" display="off"/>
 <attribute name="MPN" value="" x="200.835" y="76.835" size="1.778" layer="27" display="off"/>
-<attribute name="NAME" x="124.635" y="104.395" size="1.27" layer="25"/>
+<attribute name="NAME" x="120.635" y="80.895" size="1.27" layer="25"/>
 <attribute name="OC_FARNELL" value="1243244" x="200.835" y="76.835" size="1.778" layer="27" display="off"/>
 <attribute name="OC_NEWARK" value="unknown" x="200.835" y="76.835" size="1.778" layer="27" display="off"/>
 <attribute name="POPULARITY" value="1" x="200.835" y="76.835" size="1.778" layer="27" display="off"/>
@@ -2507,7 +2510,7 @@ design rules under a new name.</description>
 <element name="TRIGGER3" library="con-lumberg" library_urn="urn:adsk.eagle:library:163" package="1503_09" package3d_urn="urn:adsk.eagle:package:8555/1" value="1503_09" x="111.3" y="2.54" smashed="yes" rot="R180">
 <attribute name="MF" value="" x="66.85" y="22.86" size="1.778" layer="27" rot="R180" display="off"/>
 <attribute name="MPN" value="" x="66.85" y="22.86" size="1.778" layer="27" rot="R180" display="off"/>
-<attribute name="NAME" x="111.3" y="-4.7" size="1.27" layer="25" rot="R180"/>
+<attribute name="NAME" x="115.3" y="18.3" size="1.27" layer="25" rot="R180"/>
 <attribute name="OC_FARNELL" value="1243244" x="66.85" y="22.86" size="1.778" layer="27" rot="R180" display="off"/>
 <attribute name="OC_NEWARK" value="unknown" x="66.85" y="22.86" size="1.778" layer="27" rot="R180" display="off"/>
 <attribute name="POPULARITY" value="1" x="66.85" y="22.86" size="1.778" layer="27" rot="R180" display="off"/>
@@ -2516,7 +2519,7 @@ design rules under a new name.</description>
 <element name="TRIGGER4" library="con-lumberg" library_urn="urn:adsk.eagle:library:163" package="1503_09" package3d_urn="urn:adsk.eagle:package:8555/1" value="1503_09" x="125.27" y="2.54" smashed="yes" rot="R180">
 <attribute name="MF" value="" x="64.31" y="22.86" size="1.778" layer="27" rot="R180" display="off"/>
 <attribute name="MPN" value="" x="64.31" y="22.86" size="1.778" layer="27" rot="R180" display="off"/>
-<attribute name="NAME" x="125.27" y="-4.7" size="1.27" layer="25" rot="R180"/>
+<attribute name="NAME" x="129.27" y="18.3" size="1.27" layer="25" rot="R180"/>
 <attribute name="OC_FARNELL" value="1243244" x="64.31" y="22.86" size="1.778" layer="27" rot="R180" display="off"/>
 <attribute name="OC_NEWARK" value="unknown" x="64.31" y="22.86" size="1.778" layer="27" rot="R180" display="off"/>
 <attribute name="POPULARITY" value="1" x="64.31" y="22.86" size="1.778" layer="27" rot="R180" display="off"/>
@@ -2676,15 +2679,13 @@ design rules under a new name.</description>
 <wire x1="70.16" y1="44.84" x2="62.58" y2="52.42" width="0.8" layer="16"/>
 <wire x1="82" y1="54.705" x2="82" y2="54.63" width="0.4" layer="16"/>
 <wire x1="82" y1="54.63" x2="81.95" y2="54.58" width="0.4" layer="16"/>
-<wire x1="24.77" y1="97" x2="25" y2="97" width="0.8" layer="16"/>
-<wire x1="25" y1="97" x2="34.31" y2="97" width="0.8" layer="16"/>
+<wire x1="23.77" y1="97" x2="34.31" y2="97" width="0.8" layer="16"/>
 <wire x1="49.8" y1="77.15" x2="49.8" y2="85.02" width="0.4" layer="16"/>
 <wire x1="49.8" y1="85.02" x2="53.78" y2="89" width="0.4" layer="16"/>
 <wire x1="15.23" y1="87.46" x2="15.23" y2="88.46" width="0.8" layer="16"/>
-<wire x1="16.385" y1="89.615" x2="16.135" y2="89.365" width="0.8" layer="16"/>
-<wire x1="16.135" y1="89.365" x2="15.23" y2="88.46" width="0.8" layer="16"/>
-<wire x1="87.45" y1="42.3" x2="84.91" y2="44.84" width="0.4" layer="16"/>
-<wire x1="84.91" y1="44.84" x2="79.83" y2="44.84" width="0.4" layer="16"/>
+<wire x1="87.45" y1="42.3" x2="85.45" y2="42.3" width="0.4" layer="16"/>
+<wire x1="85.45" y1="42.3" x2="82.91" y2="44.84" width="0.4" layer="16"/>
+<wire x1="82.91" y1="44.84" x2="79.83" y2="44.84" width="0.4" layer="16"/>
 <wire x1="120.635" y1="84.055" x2="129" y2="75.69" width="0.8" layer="16"/>
 <wire x1="127.49" y1="52.49" x2="102" y2="52.49" width="0.8" layer="16"/>
 <wire x1="102" y1="52.49" x2="94.99" y2="52.49" width="0.8" layer="16"/>
@@ -2718,8 +2719,7 @@ design rules under a new name.</description>
 <wire x1="67.12305" y1="39.08" x2="67.43" y2="38.77305" width="0.8" layer="16"/>
 <wire x1="104.56" y1="49.42" x2="100.5" y2="45.36" width="0.8" layer="16"/>
 <wire x1="100.5" y1="45.36" x2="100.5" y2="34" width="0.8" layer="16"/>
-<wire x1="16.385" y1="89.615" x2="23.77" y2="97" width="0.8" layer="16"/>
-<wire x1="23.77" y1="97" x2="24.77" y2="97" width="0.8" layer="16"/>
+<wire x1="15.23" y1="88.46" x2="23.77" y2="97" width="0.8" layer="16"/>
 </signal>
 <signal name="PB12">
 <contactref element="STM32F103" pad="P$1"/>
@@ -3135,10 +3135,10 @@ design rules under a new name.</description>
 <contactref element="R14" pad="2"/>
 <contactref element="IC1" pad="13"/>
 <wire x1="87.45" y1="37.22" x2="85.72" y2="37.22" width="0.4" layer="16"/>
-<wire x1="84.5" y1="27" x2="82" y2="24.5" width="0.4" layer="16"/>
+<wire x1="85" y1="27.5" x2="82" y2="24.5" width="0.4" layer="16"/>
 <wire x1="74.15" y1="24.5" x2="72.23" y2="22.58" width="0.4" layer="16"/>
-<wire x1="85.72" y1="37.22" x2="84.5" y2="36" width="0.4" layer="16"/>
-<wire x1="84.5" y1="36" x2="84.5" y2="27" width="0.4" layer="16"/>
+<wire x1="85.72" y1="37.22" x2="85" y2="36.5" width="0.4" layer="16"/>
+<wire x1="85" y1="36.5" x2="85" y2="27.5" width="0.4" layer="16"/>
 <wire x1="82" y1="24.5" x2="74.15" y2="24.5" width="0.4" layer="16"/>
 </signal>
 <signal name="N$20">

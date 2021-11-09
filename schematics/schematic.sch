@@ -22093,21 +22093,21 @@ W = angled&lt;p&gt;
 <net name="PB10" class="0">
 <segment>
 <pinref part="STM32F103" gate="G$1" pin="PB10"/>
-<wire x1="83.82" y1="55.88" x2="88.9" y2="55.88" width="0.1524" layer="91"/>
-<wire x1="88.9" y1="55.88" x2="88.9" y2="-22.86" width="0.1524" layer="91"/>
+<wire x1="83.82" y1="55.88" x2="96.52" y2="55.88" width="0.1524" layer="91"/>
+<wire x1="96.52" y1="55.88" x2="96.52" y2="-22.86" width="0.1524" layer="91"/>
 <label x="45.72" y="-20.32" size="1.778" layer="95"/>
 <pinref part="LCD" gate="G$1" pin="D6"/>
-<wire x1="88.9" y1="-22.86" x2="45.72" y2="-22.86" width="0.1524" layer="91"/>
+<wire x1="96.52" y1="-22.86" x2="45.72" y2="-22.86" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="PB11" class="0">
 <segment>
 <label x="45.72" y="-17.78" size="1.778" layer="95"/>
 <pinref part="STM32F103" gate="G$1" pin="PB11"/>
-<wire x1="96.52" y1="-25.4" x2="96.52" y2="58.42" width="0.1524" layer="91"/>
-<wire x1="96.52" y1="58.42" x2="83.82" y2="58.42" width="0.1524" layer="91"/>
+<wire x1="99.06" y1="-25.4" x2="99.06" y2="58.42" width="0.1524" layer="91"/>
+<wire x1="99.06" y1="58.42" x2="83.82" y2="58.42" width="0.1524" layer="91"/>
 <pinref part="LCD" gate="G$1" pin="D7"/>
-<wire x1="96.52" y1="-25.4" x2="45.72" y2="-25.4" width="0.1524" layer="91"/>
+<wire x1="99.06" y1="-25.4" x2="45.72" y2="-25.4" width="0.1524" layer="91"/>
 </segment>
 </net>
 <net name="N$27" class="0">
